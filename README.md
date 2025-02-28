@@ -1,54 +1,53 @@
-# up5k_riscv
-There are many RISC V projects on iCE40. This one is mine.
+# RISC-V on the iCE40UP5K-B-EVN
+
+RISC-V on the iCE40UP5K-B-EVN board.
+
+Based on Eric Brombaugh's [UP5K RISC-V project](https://github.com/emeb/up5k_riscv).
 
 ## What is it?
-A small RISC V system built on an iCE40 UP5k FPGA which includes the following:
 
-* Claire Wolf's PicoRV32 CPU
-* 8kB boot ROM in dedicated BRAM
-* 64kB instruction/data RAM in SPRAM
+A small RISC-V system designed to run on the iCE40UP5K-B-EVN board. 
+
+It features:
+
+* A [PicoRV32 CPU](https://github.com/YosysHQ/picorv32)
+* 8KB of boot ROM in dedicated BRAM
+* 64KB instruction/data RAM in SPRAM
 * Dedicated hard IP core SPI interface to configuration flash
 * Additional hard IP core SPI, currently used for an ILI9341 LCD
 * Dedicated hard IP core I2C for testing
-* 115k serial port
+* 115.2k serial port
 * 32-bit output port (for LEDs, LCD control, etc)
 * GCC firmware build
 
-## Prerequisites
-To build this you will need the following FPGA tools
+## Pre-requisites
 
-* Icestorm - ice40 FPGA tools
-* Yosys - Synthesis
-* Nextpnr - Place and Route (version newer than Mar 23 2019 is needed to support IP cores)
+To build this you will need:
 
-Info on these can be found at http://www.clifford.at/icestorm/
-
-You will also need a RISC V GCC toolchain to build the startup ROM. I used:
-
-* https://gnu-mcu-eclipse.github.io/blog/2018/10/19/riscv-none-gcc-v8-1-0-2-20181019-released/
+* [Yosys](https://github.com/YosysHQ/yosys) - Synthesis
+* [Nextpnr](https://github.com/YosysHQ/nextpnr) - Place and Route
+* [RISC-V GNU toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) - Firmware
 
 ## Building
 
-	git clone https://github.com/emeb/up5k_riscv.git
-	cd up5k_riscv
-	git submodule update --init
-	cd icestorm
+	git clone https://github.com/pboechat/ice40up5k_riscv.git
+	cd ice40up5k_riscv
+	git submodule update --init --recursive
 	make
 
-## Loading
-I built this system on a custom up5k board and programmed it with a custom
-USB->SPI board that I built so you will definitely need to tweak the programming
-target of the Makefile in the icestorm directory to match your own hardware.
-
 ## Booting up
-Connect a 115.2kbps terminal to the TX/RX pins of the FPGA and apply power.
+
+Connect a 115.2kbps terminal (eg, PuTTY) to the TX/RX pins of the board and apply power.
+
 You should see a message:
 
+	```
 	up5k_riscv - starting up
 	spi id: 0x00EF4016
 	LCD initialized
 	I2C0 Initialized
 	xxxx...
+	```
 	
 If you have an LCD connected to the SPI1 port pins on the FPGA then it should
 display several different screens to demonstrate the graphics. You can store
@@ -62,8 +61,7 @@ on the bus at the expected address then you will see "." characters, otherwise
 
 ## Thanks
 
-Thanks to the developers of all the tools and cores used for this. In particular
+Thanks to:
 
-* Claire Wolf <clifford@clifford.at> for the picorv32 and icestorm, etc.
-* Sylvain Munaut for working examples and assistance.
-* Dave Shah for knowing almost everything.
+* Eric Brombaugh <ebrombaugh1@cox.net> for the original project!
+* Claire Wolf <clifford@clifford.at> for picorv32, icestorm, etc.

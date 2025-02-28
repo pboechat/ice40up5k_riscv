@@ -6,7 +6,7 @@
 `default_nettype none
 
 module system(
-	input	clk24,			// clock, reset
+	input	clk_24,			// clock, reset
 			reset,
 	
 	input	RX,				// serial
@@ -48,7 +48,7 @@ module system(
 		.CATCH_MISALIGN(0),
 		.CATCH_ILLINSN(0)
 	) cpu_I (
-		.clk       (clk24),
+		.clk       (clk_24),
 		.resetn    (~reset),
 		.mem_valid (mem_valid),
 		.mem_instr (mem_instr),
@@ -70,14 +70,14 @@ module system(
 	// 2k x 32 ROM
 	reg [31:0] rom[2047:0], rom_do;
 	initial
-        $readmemh("rom.hex",rom);		
-	always @(posedge clk24)
+        $readmemh("../out/firmware.hex",rom);		
+	always @(posedge clk_24)
 		rom_do <= rom[mem_addr[12:2]];
 	
 	// RAM, byte addressable
 	wire [31:0] ram_do;
 	spram_16kx32 uram(
-		.clk(clk24),
+		.clk(clk_24),
 		.sel(ram_sel),
 		.we(mem_wstrb),
 		.addr(mem_addr[15:0]),
@@ -86,7 +86,7 @@ module system(
 	);
 	
 	// GPIO
-	always @(posedge clk24)
+	always @(posedge clk_24)
 		if(gpo_sel)
 		begin
 			if(mem_wstrb[0])
@@ -102,7 +102,7 @@ module system(
 	// Serial
 	wire [7:0] ser_do;
 	acia uacia(
-		.clk(clk24),			// system clock
+		.clk(clk_24),			// system clock
 		.rst(reset),			// system reset
 		.cs(ser_sel),			// chip select
 		.we(mem_wstrb[0]),		// write enable
@@ -118,7 +118,7 @@ module system(
 	wire [7:0] wbb_do;
 	wire wbb_rdy;
 	wb_bus uwbb(
-		.clk(clk24),			// system clock
+		.clk(clk_24),			// system clock
 		.rst(reset),			// system reset
 		.cs(wbb_sel),			// chip select
 		.we(mem_wstrb[0]),		// write enable
@@ -140,7 +140,7 @@ module system(
 	
 	// Resettable clock counter
 	reg [31:0] cnt;
-	always @(posedge clk24)
+	always @(posedge clk_24)
 		if(cnt_sel & |mem_wstrb)
 		begin
 			if(mem_wstrb[0])
@@ -169,7 +169,7 @@ module system(
 	
 	// ready flag
 	reg mem_rdy;
-	always @(posedge clk24)
+	always @(posedge clk_24)
 		if(reset)
 			mem_rdy <= 1'b0;
 		else

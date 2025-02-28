@@ -19,13 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-	.section .text
-
-start:
-
-	// zero-initialize register file
+.section .text
+.global _start
+_start:
 	addi x1, zero, 0
-	// x2 (sp) is initialized by reset
 	addi x3, zero, 0
 	addi x4, zero, 0
 	addi x5, zero, 0
@@ -55,10 +52,7 @@ start:
 	addi x29, zero, 0
 	addi x30, zero, 0
 	addi x31, zero, 0
-
 #if 0
-	// zero initialize entire scratchpad memory
-	// assumes sp points to end of RAM
 	li a0, 0x10000000
 	li a1, 0
 setmemloop:
@@ -66,8 +60,6 @@ setmemloop:
 	addi a0, a0, 4
 	blt a0, sp, setmemloop
 #endif
-
-	// copy data section
 	la a0, _sidata
 	la a1, _sdata
 	la a2, _edata
@@ -79,8 +71,6 @@ loop_init_data:
 	addi a1, a1, 4
 	blt a1, a2, loop_init_data
 end_init_data:
-
-	// zero-init bss section
 	la a0, _sbss
 	la a1, _ebss
 	bge a0, a1, end_init_bss
@@ -89,8 +79,6 @@ loop_init_bss:
 	addi a0, a0, 4
 	blt a0, a1, loop_init_bss
 end_init_bss:
-
-	// call main
 	call main
 loop:
 	j loop

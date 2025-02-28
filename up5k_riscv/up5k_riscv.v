@@ -4,8 +4,8 @@
 `default_nettype none
 
 module up5k_riscv(
-	// 16MHz clock osc
-	input clk_16,
+	// 12MHz clock osc
+	input clk_12,
 		
     // serial
     inout RX, TX,
@@ -36,12 +36,12 @@ module up5k_riscv(
 	output RGB0, RGB1, RGB2
 );
 		
-	// Fin=16, Fout=24 (16*(24/16))
+	// Fin=12, Fout=24 (12*(4/2))
 	wire clk, pll_lock;
 	SB_PLL40_PAD #(
 		.DIVR(4'b0000),
-		.DIVF(7'b0010111),
-		.DIVQ(3'b100),
+		.DIVF(7'b0000011),
+		.DIVQ(3'b001),
 		.FILTER_RANGE(3'b001),
 		.FEEDBACK_PATH("SIMPLE"),
 		.DELAY_ADJUSTMENT_MODE_FEEDBACK("FIXED"),
@@ -53,7 +53,7 @@ module up5k_riscv(
 		.ENABLE_ICEGATE(1'b0)
 	)
 	pll_inst (
-		.PACKAGEPIN(clk_16),
+		.PACKAGEPIN(clk_12),
 		.PLLOUTCORE(clk),
 		.PLLOUTGLOBAL(),
 		.EXTFEEDBACK(),
@@ -94,7 +94,7 @@ module up5k_riscv(
 	wire [31:0] gpio_o;
 	wire raw_rx, raw_tx;
 	system uut(
-		.clk24(clk),
+		.clk_24(clk),
 		.reset(reset),
 		
 		.RX(raw_rx),
