@@ -15,14 +15,13 @@
 #define FLASH_WSR1 0x01 // write status reg 1
 #define FLASH_WSR2 0x31 // write status reg 2
 #define FLASH_WSR3 0x11 // write status reg 3
-#define FLASH_WEN  0x06 // write enable
+#define FLASH_WEN 0x06	// write enable
 #define FLASH_EB32 0x52 // erase block 32k
 #define FLASH_GBUL 0x98 // global unlock
 #define FLASH_WKUP 0xAB // wakeup
 #define FLASH_ERST 0x66 // enable reset
-#define FLASH_RST  0x99 // reset
-#define FLASH_ID   0x9f // get ID bytes
-
+#define FLASH_RST 0x99	// reset
+#define FLASH_ID 0x9f	// get ID bytes
 
 /*
  * wake up SPI Flash
@@ -38,13 +37,13 @@ void flash_init(SPI_TypeDef *s)
 void flash_header(SPI_TypeDef *s, uint8_t cmd, uint32_t addr)
 {
 	uint8_t txdat[4];
-	
+
 	/* assemble header */
 	txdat[0] = cmd;
-	txdat[1] = (addr>>16)&0xff;
-	txdat[2] = (addr>>8)&0xff;
-	txdat[3] = (addr)&0xff;
-	
+	txdat[1] = (addr >> 16) & 0xff;
+	txdat[2] = (addr >> 8) & 0xff;
+	txdat[3] = (addr) & 0xff;
+
 	/* send the header */
 	spi_transmit(s, txdat, 4);
 }
@@ -54,23 +53,23 @@ void flash_header(SPI_TypeDef *s, uint8_t cmd, uint32_t addr)
  */
 void flash_read(SPI_TypeDef *s, uint8_t *dst, uint32_t addr, uint32_t len)
 {
-	uint8_t dummy __attribute ((unused));
-	
+	uint8_t dummy __attribute((unused));
+
 	spi_cs_low(s);
-	
+
 	/* send read header */
 	flash_header(s, FLASH_READ, addr);
-	
+
 	/* wait for tx ready */
 	spi_tx_wait(s);
-	
+
 	/* dummy reads */
 	dummy = s->SPIRXDR;
 	dummy = s->SPIRXDR;
-	
+
 	/* get the buffer */
 	spi_receive(s, dst, len);
-	
+
 	spi_cs_high(s);
 }
 
@@ -80,32 +79,32 @@ void flash_read(SPI_TypeDef *s, uint8_t *dst, uint32_t addr, uint32_t len)
 uint8_t flash_rdreg(SPI_TypeDef *s, uint8_t cmd)
 {
 	uint8_t result;
-	
+
 	spi_cs_low(s);
-	
+
 	/* wait for tx ready */
 	spi_tx_wait(s);
-	
+
 	/* send command */
 	s->SPITXDR = cmd;
-	
+
 	/* wait for rx ready */
 	spi_rx_wait(s);
-		
+
 	/* dummy read */
 	result = s->SPIRXDR;
 
 	/* send dummy data */
 	s->SPITXDR = 0;
-	
+
 	/* wait for rx ready */
 	spi_rx_wait(s);
-		
+
 	/* read data */
 	result = s->SPIRXDR;
-		
+
 	spi_cs_high(s);
-	
+
 	return result;
 }
 
@@ -122,7 +121,8 @@ uint8_t flash_status(SPI_TypeDef *s)
  */
 void flash_busy_wait(SPI_TypeDef *s)
 {
-	while(!(flash_status(s)&1));
+	while (!(flash_status(s) & 1))
+		;
 }
 
 /*
@@ -132,15 +132,15 @@ void flash_eraseblk(SPI_TypeDef *s, uint32_t addr)
 {
 	/* write enable */
 	spi_tx_byte(s, FLASH_WEN);
-	
+
 	spi_cs_low(s);
-	
+
 	/* send read header */
 	flash_header(s, FLASH_EB32, addr);
-	
+
 	/* wait for rx ready */
 	spi_rx_wait(s);
-	
+
 	spi_cs_high(s);
 }
 
@@ -151,15 +151,15 @@ void flash_write(SPI_TypeDef *s, uint8_t *src, uint32_t addr, uint32_t len)
 {
 	/* write enable */
 	spi_tx_byte(s, FLASH_WEN);
-	
+
 	spi_cs_low(s);
-	
+
 	/* send read header */
 	flash_header(s, FLASH_WRPG, addr);
-	
+
 	/* send data packet */
 	spi_transmit(s, src, len);
-	
+
 	spi_cs_high(s);
 }
 
@@ -169,19 +169,19 @@ void flash_write(SPI_TypeDef *s, uint8_t *src, uint32_t addr, uint32_t len)
 uint32_t flash_id(SPI_TypeDef *s)
 {
 	uint8_t result[3];
-	
+
 	spi_cs_low(s);
-	
+
 	/* send command */
 	spi_tx_wait(s);
 	s->SPITXDR = FLASH_ID;
 	spi_rx_wait(s);
-	result[0] = s->SPIRXDR;	// dummy read
-	
+	result[0] = s->SPIRXDR; // dummy read
+
 	/* get id bytes */
 	spi_receive(s, result, 3);
 
 	spi_cs_high(s);
-	
-	return (result[0]<<16) | (result[1]<<8) | result[2];
+
+	return (result[0] << 16) | (result[1] << 8) | result[2];
 }

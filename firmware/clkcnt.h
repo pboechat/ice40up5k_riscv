@@ -12,4 +12,3 @@ void clkcnt_wait(uint32_t clks);
 void clkcnt_delayms(uint32_t ms);
 
 #endif
-

@@ -43,8 +43,8 @@ typedef struct
 	uint8_t reserved8[3];
 } SPI_TypeDef;
 
-#define SPI0 ((SPI_TypeDef *) SPI0_BASE)
-#define SPI1 ((SPI_TypeDef *) SPI1_BASE)
+#define SPI0 ((SPI_TypeDef *)SPI0_BASE)
+#define SPI1 ((SPI_TypeDef *)SPI1_BASE)
 
 // I2C cores @ BUS_ADDR74 = 0b0001 and 0b0011
 #define I2C0_BASE 0x40000040
@@ -52,36 +52,36 @@ typedef struct
 
 typedef struct
 {
-	uint32_t reserved0;			// 0
-	uint32_t reserved1;			// 1
-	uint32_t reserved2;			// 2
-	volatile uint8_t I2CSADDR;	// 3
+	uint32_t reserved0;		   // 0
+	uint32_t reserved1;		   // 1
+	uint32_t reserved2;		   // 2
+	volatile uint8_t I2CSADDR; // 3
 	uint8_t reserved3[3];
-	uint32_t reserved4;			// 4
-	uint32_t reserved5;			// 5
-	volatile uint8_t I2CIRQ;	// 6
+	uint32_t reserved4;		 // 4
+	uint32_t reserved5;		 // 5
+	volatile uint8_t I2CIRQ; // 6
 	uint8_t reserved6[3];
-	volatile uint8_t I2CIRQEN;	// 7
+	volatile uint8_t I2CIRQEN; // 7
 	uint8_t reserved7[3];
-	volatile uint8_t I2CCR1;	// 8
+	volatile uint8_t I2CCR1; // 8
 	uint8_t reserved8[3];
-	volatile uint8_t I2CCMDR;	// 9
+	volatile uint8_t I2CCMDR; // 9
 	uint8_t reserved9[3];
-	volatile uint8_t I2CBRLSB;	// A
+	volatile uint8_t I2CBRLSB; // A
 	uint8_t reservedA[3];
-	volatile uint8_t I2CBRMSB;	// B
+	volatile uint8_t I2CBRMSB; // B
 	uint8_t reservedB[3];
-	volatile uint8_t I2CSR;		// C
+	volatile uint8_t I2CSR; // C
 	uint8_t reservedC[3];
-	volatile uint8_t I2CTXDR;	// D
+	volatile uint8_t I2CTXDR; // D
 	uint8_t reservedD[3];
-	volatile uint8_t I2CRXDR;	// E
+	volatile uint8_t I2CRXDR; // E
 	uint8_t reservedE[3];
-	volatile uint8_t I2CGCDR;	// F
+	volatile uint8_t I2CGCDR; // F
 	uint8_t reservedF[3];
 } I2C_TypeDef;
 
-#define I2C0 ((I2C_TypeDef *) I2C0_BASE)
-#define I2C1 ((I2C_TypeDef *) I2C1_BASE)
+#define I2C0 ((I2C_TypeDef *)I2C0_BASE)
+#define I2C1 ((I2C_TypeDef *)I2C1_BASE)
 
 #endif

@@ -11,8 +11,9 @@
 void clkcnt_wait(uint32_t clks)
 {
 	clkcnt_reg = 0;
-	
-	while(clkcnt_reg < clks);
+
+	while (clkcnt_reg < clks)
+		;
 }
 
 /*
@@ -28,6 +29,8 @@ void clkcnt_1ms(void)
  */
 void clkcnt_delayms(uint32_t ms)
 {
-	while(ms--)
+	while (ms--)
+	{
 		clkcnt_1ms();
+	}
 }

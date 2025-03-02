@@ -11,11 +11,11 @@
  */
 void spi_init(SPI_TypeDef *s)
 {
-	s->SPICR0 = 0xff;	// max delay counts on all auto CS timing
-	s->SPICR1 = 0x84;	// enable spi, disable scsni(undocumented!)
-	s->SPICR2 = 0xc0;	// master, hold cs low while busy
-	s->SPIBR = 0x02;	// divide clk by 3 for spi clk
-	s->SPICSR = 0x0f;	// all CS outs high
+	s->SPICR0 = 0xff; // max delay counts on all auto CS timing
+	s->SPICR1 = 0x84; // enable spi, disable scsni(undocumented!)
+	s->SPICR2 = 0xc0; // master, hold cs low while busy
+	s->SPIBR = 0x02;  // divide clk by 3 for spi clk
+	s->SPICSR = 0x0f; // all CS outs high
 }
 
 /*
@@ -24,16 +24,16 @@ void spi_init(SPI_TypeDef *s)
 void spi_tx_byte(SPI_TypeDef *s, uint8_t data)
 {
 	spi_cs_low(s);
-	
+
 	/* check for tx ready */
 	spi_tx_wait(s);
-	
+
 	/* send data */
 	s->SPITXDR = data;
-	
+
 	/* wait for rx ready (transmission complete) */
 	spi_rx_wait(s);
-	
+
 	spi_cs_high(s);
 }
 
@@ -43,18 +43,18 @@ void spi_tx_byte(SPI_TypeDef *s, uint8_t data)
 uint8_t spi_txrx_byte(SPI_TypeDef *s, uint8_t data)
 {
 	spi_cs_low(s);
-	
+
 	/* check for tx ready */
 	spi_tx_wait(s);
-	
+
 	/* send data */
 	s->SPITXDR = data;
-	
+
 	/* wait for rx ready (transmission complete) */
 	spi_rx_wait(s);
-	
+
 	spi_cs_high(s);
-	
+
 	/* get data */
 	return s->SPIRXDR;
 }
@@ -65,15 +65,15 @@ uint8_t spi_txrx_byte(SPI_TypeDef *s, uint8_t data)
 void spi_transmit(SPI_TypeDef *s, uint8_t *src, uint16_t sz)
 {
 	/* loop */
-	while(sz--)
+	while (sz--)
 	{
 		/* wait for tx ready */
 		spi_tx_wait(s);
-	
+
 		/* transmit a byte */
 		s->SPITXDR = *src++;
 	}
-	
+
 	/* wait for end of transmision */
 	spi_rx_wait(s);
 }
@@ -85,16 +85,16 @@ void spi_receive(SPI_TypeDef *s, uint8_t *dst, uint16_t sz)
 {
 	/* wait for tx ready */
 	spi_tx_wait(s);
-	
+
 	/* loop */
-	while(sz--)
+	while (sz--)
 	{
 		/* send dummy data */
 		s->SPITXDR = 0;
-		
+
 		/* wait for rx ready */
 		spi_rx_wait(s);
-		
+
 		/* get read data */
 		*dst++ = s->SPIRXDR;
 	}

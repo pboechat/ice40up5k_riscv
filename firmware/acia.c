@@ -12,8 +12,9 @@
 void acia_putc(char c)
 {
 	/* wait for tx ready */
-	while(!(acia_ctlstat & 2));
-	
+	while (!(acia_ctlstat & 2))
+		;
+
 	/* send char */
 	acia_data = c;
 }
@@ -21,7 +22,7 @@ void acia_putc(char c)
 /*
  * output for tiny printf
  */
-void acia_printf_putc(void* p, char c)
+void acia_printf_putc(void *p, char c)
 {
 	acia_putc(c);
 }
@@ -32,9 +33,11 @@ void acia_printf_putc(void* p, char c)
 void acia_puts(char *str)
 {
 	uint8_t c;
-	
-	while((c=*str++))
+
+	while ((c = *str++))
+	{
 		acia_putc(c);
+	}
 }
 
 /*
@@ -42,8 +45,12 @@ void acia_puts(char *str)
  */
 int acia_getc(void)
 {
-	if(!(acia_ctlstat & 1))
+	if (!(acia_ctlstat & 1))
+	{
 		return EOF;
+	}
 	else
+	{
 		return acia_data;
+	}
 }

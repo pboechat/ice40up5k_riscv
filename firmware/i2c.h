@@ -13,4 +13,3 @@ void i2c_init(I2C_TypeDef *s);
 int8_t i2c_tx(I2C_TypeDef *s, uint8_t addr, uint8_t *data, uint8_t sz);
 
 #endif
-

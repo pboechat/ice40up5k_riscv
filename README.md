@@ -26,7 +26,8 @@ To build this you will need:
 
 * [Yosys](https://github.com/YosysHQ/yosys) - Synthesis
 * [Nextpnr](https://github.com/YosysHQ/nextpnr) - Place and Route
-* [RISC-V GNU toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) - Firmware
+* [RISC-V GNU toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
+* [picolibc](https://github.com/picolibc/picolibc)
 
 ## Building
 

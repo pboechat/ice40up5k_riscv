@@ -18,4 +18,3 @@ void flash_write(SPI_TypeDef *s, uint8_t *src, uint32_t addr, uint32_t len);
 uint32_t flash_id(SPI_TypeDef *s);
 
 #endif
-
