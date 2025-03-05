@@ -29,59 +29,71 @@ static void *stdout_putp;
 
 #ifdef PRINTF_LONG_SUPPORT
 
-static void ui2a(unsigned long int num, int base, int uc, char *bf)
+static void uli2a(unsigned long int num, int base, int uc, char *bf)
 {
     char *ptr = bf;
     char temp[64]; // temporary buffer (max 64 bits in binary)
-    int i = 0;
 
-    // character map for bases > 10
-    const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
-
-    // ensure valid base
-    if (base < 2 || base > 16)
+    if (base == 10)
     {
-        *bf = '\0';
-        return;
+        const unsigned long int powers_of_10[20] = {
+            10000000000000000000, 1000000000000000000, 100000000000000000, 10000000000000000, 1000000000000000,
+            100000000000000, 10000000000000, 1000000000000, 100000000000, 10000000000,
+            1000000000, 100000000, 10000000, 1000000, 100000,
+            10000, 1000, 100, 10, 1};
+        unsigned int i = 0;
+        while (i < 20)
+        {
+            unsigned long int p = powers_of_10[i];
+            unsigned int q = 0;
+            while (num >= p)
+            {
+                num -= p;
+                q++;
+            }
+            if (q > 0 || ptr != bf)
+            {
+                *ptr++ = '0' + q;
+            }
+            i++;
+        }
     }
-
-    // convert number to string (in reverse order)
-    do
+    else
     {
-        unsigned long int remainder;
+        // character map for base 16
+        const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
 
+        unsigned int mask;
+        unsigned int shift;
         if (base == 16)
         {
-            remainder = num & 0xF; // faster than mod
-            num >>= 4;             // faster than div
-        }
-        else if (base == 10)
-        {
-            remainder = 0;
-            while (num >= 10)
-            {
-                num -= 10;
-                remainder++;
-            }
+            mask = 0xf;
+            shift = 4;
         }
         else if (base == 8)
         {
-            remainder = num & 7;
-            num >>= 3;
+            mask = 7;
+            shift = 3;
         }
-        else
-        { // base 2
-            remainder = num & 1;
-            num >>= 1;
+        else // base 2
+        {
+            mask = 1;
+            shift = 1;
         }
 
-        temp[i++] = digits[remainder]; // store in reverse
-    } while (num > 0);
+        unsigned int i = 0;
+        do
+        {
+            unsigned int r = num & mask; // faster than mod
+            num >>= shift;               // faster than div
+            temp[i++] = digits[r];       // store in reverse
+        } while (num > 0);
 
-    // reverse the string
-    while (i--)
-    {
-        *ptr++ = temp[i];
+        // reverse the string
+        while (i--)
+        {
+            *ptr++ = temp[i];
+        }
     }
 
     *ptr = '\0'; // null-terminate
@@ -103,55 +115,72 @@ static void ui2a(unsigned int num, int base, int uc, char *bf)
 {
     char *ptr = bf;
     char temp[32]; // temporary buffer (max 32 bits in binary)
-    int i = 0;
-
-    // character map for bases > 10
-    const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
 
     // handle base 2, 8, 10, 16 only (safety check)
-    if (base < 2 || base > 16)
+    if (base != 2 && base != 8 && base != 10 && base != 16)
     {
         *bf = '\0';
         return;
     }
 
-    // convert number to string (in reverse order)
-    do
+    if (base == 10)
     {
-        int remainder;
+        const int powers_of_10[10] = {
+            1000000000, 100000000, 10000000, 1000000, 100000,
+            10000, 1000, 100, 10, 1};
+        int i = 0;
+        while (i < 10)
+        {
+            int p = powers_of_10[i];
+            int q = 0;
+            while (num >= p)
+            {
+                num -= p;
+                q++;
+            }
+            if (q > 0 || ptr != bf)
+            {
+                *ptr++ = '0' + q;
+            }
+            i++;
+        }
+    }
+    else
+    {
+        // character map for base 16
+        const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
 
+        int mask;
+        int shift;
         if (base == 16)
         {
-            remainder = num & 0xF; // faster than mod
-            num >>= 4;             // faster than div
-        }
-        else if (base == 10)
-        {
-            remainder = 0;
-            while (num >= 10)
-            {
-                num -= 10;
-                remainder++;
-            }
+            mask = 0xf;
+            shift = 4;
         }
         else if (base == 8)
         {
-            remainder = num & 7;
-            num >>= 3;
+            mask = 7;
+            shift = 3;
         }
-        else
-        { // base 2
-            remainder = num & 1;
-            num >>= 1;
+        else // base 2
+        {
+            mask = 1;
+            shift = 1;
         }
 
-        temp[i++] = digits[remainder]; // store in reverse
-    } while (num > 0);
+        int i = 0;
+        do
+        {
+            int r = num & mask;    // faster than mod
+            num >>= shift;         // faster than div
+            temp[i++] = digits[r]; // store in reverse
+        } while (num > 0);
 
-    // reverse the string
-    while (i--)
-    {
-        *ptr++ = temp[i];
+        // reverse the string
+        while (i--)
+        {
+            *ptr++ = temp[i];
+        }
     }
 
     *ptr = '\0'; // null-terminate
@@ -170,13 +199,21 @@ static void i2a(int num, char *bf)
 static int a2d(char ch)
 {
     if (ch >= '0' && ch <= '9')
+    {
         return ch - '0';
+    }
     else if (ch >= 'a' && ch <= 'f')
+    {
         return ch - 'a' + 10;
+    }
     else if (ch >= 'A' && ch <= 'F')
+    {
         return ch - 'A' + 10;
+    }
     else
+    {
         return -1;
+    }
 }
 
 static char a2i(char ch, char **src, int base, int *nump)
@@ -187,8 +224,15 @@ static char a2i(char ch, char **src, int base, int *nump)
     while ((digit = a2d(ch)) >= 0)
     {
         if (digit > base)
+        {
             break;
-        num = num * base + digit;
+        }
+        int new_num = digit;
+        for (int i = 0; i < base; ++i)
+        {
+            new_num += num;
+        }
+        num = new_num;
         ch = *p++;
     }
     *src = p;
@@ -202,23 +246,33 @@ static void putchw(void *putp, putcf putf, int n, char z, char *bf)
     char ch;
     char *p = bf;
     while (*p++ && n > 0)
+    {
         n--;
+    }
     while (n-- > 0)
+    {
         putf(putp, fc);
+    }
     while ((ch = *bf++))
+    {
         putf(putp, ch);
+    }
 }
 
 void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
 {
-    char bf[12];
-
+#ifdef PRINTF_LONG_SUPPORT
+    char bf[64];
+#else
+    char bf[32];
+#endif
     char ch;
-
     while ((ch = *(fmt++)))
     {
         if (ch != '%')
+        {
             putf(putp, ch);
+        }
         else
         {
             char lz = 0;
