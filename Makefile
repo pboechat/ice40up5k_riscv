@@ -1,7 +1,7 @@
 all:
-	$(MAKE) -C up5k_riscv/ all
+	$(MAKE) -C soc/ all
 
 clean:
-	$(MAKE) -C up5k_riscv/ clean
+	$(MAKE) -C soc/ clean
 
 .PHONY: all clean

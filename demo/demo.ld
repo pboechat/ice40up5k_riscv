@@ -1,9 +1,9 @@
 MEMORY
 {
-    /* 2k ROM */
+    /* 8KB ROM */
     ROM (rx)    : ORIGIN = 0x00000000, LENGTH = 0x2000
-    /* 64k RAM */
-    RAM (xrw)   : ORIGIN = 0x10000000, LENGTH = 0x10000
+    /* 128KB RAM */
+    RAM (xrw)   : ORIGIN = 0x10000000, LENGTH = 0x20000
 }
 SECTIONS {
     /* text section (ROM) */
@@ -47,14 +47,14 @@ SECTIONS {
         . = ALIGN(4);
         _ebss = .;
     } >RAM
-    /* assert that .data + .bss <= 16k */
-    ASSERT(_ebss - _sdata <= 0x4000, "ERROR: .data + .bss exceed 16k!")
-    /* heap section (start of RAM - after all data - grows upwards and is limited to 16k) */
+    /* assert that .data + .bss <= 104KB */
+    ASSERT(_ebss - _sdata <= 0x1A000, "ERROR: .data + .bss exceed 104KB!")
+    /* heap section (start of RAM - after all data - grows upwards and is limited to 104KB) */
     .heap :
     {
         . = ALIGN(4);
         __heap_start = .;
-        . += 0x6000; /* 24k heap */
+        . += 0x3000; /* 12KB heap */
         __heap_end = .;
     } >RAM
     /* stack section (end of RAM - grows downwards) */
@@ -62,6 +62,6 @@ SECTIONS {
     {
         . = ALIGN(4);
         __stack_top = ORIGIN(RAM) + LENGTH(RAM);
-        __stack_bottom = __stack_top - 0x6000;  /* 24k stack */
+        __stack_bottom = __stack_top - 0x3000;  /* 12KB stack */
     } >RAM
 }

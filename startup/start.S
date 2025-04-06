@@ -64,7 +64,6 @@ loop_init_bss:
 end_init_bss:
 	# set stack pointer
 	la sp, __stack_top
-	# call main
 	call main
 loop:
 	j loop

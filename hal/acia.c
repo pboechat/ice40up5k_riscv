@@ -11,12 +11,12 @@
  */
 void acia_putc(char c)
 {
-	/* wait for tx ready */
-	while (!(acia_ctlstat & 2))
-		;
+    /* wait for tx ready */
+    while (!(acia_ctlstat & 2))
+        ;
 
-	/* send char */
-	acia_data = c;
+    /* send char */
+    acia_data = c;
 }
 
 /*
@@ -24,7 +24,7 @@ void acia_putc(char c)
  */
 void acia_printf_putc(void *p, char c)
 {
-	acia_putc(c);
+    acia_putc(c);
 }
 
 /*
@@ -32,12 +32,12 @@ void acia_printf_putc(void *p, char c)
  */
 void acia_puts(char *str)
 {
-	uint8_t c;
+    uint8_t c;
 
-	while ((c = *str++))
-	{
-		acia_putc(c);
-	}
+    while ((c = *str++))
+    {
+        acia_putc(c);
+    }
 }
 
 /*
@@ -45,12 +45,12 @@ void acia_puts(char *str)
  */
 int acia_getc(void)
 {
-	if (!(acia_ctlstat & 1))
-	{
-		return EOF;
-	}
-	else
-	{
-		return acia_data;
-	}
+    if (!(acia_ctlstat & 1))
+    {
+        return EOF;
+    }
+    else
+    {
+        return acia_data;
+    }
 }

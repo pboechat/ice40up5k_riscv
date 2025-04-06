@@ -1,6 +1,5 @@
 /*
- * main.c - top level of picorv32 firmware
- * 06-30-19 E. Brombaugh
+ * demo firmware
  */
 
 #include <stdio.h>
@@ -21,7 +20,7 @@ void main()
 
 	init_printf(0, acia_printf_putc);
 	printf("\n\n\rup5k_riscv - starting up\n\r");
-	
+
 #if 0
 	void *ptr = malloc(0x1000);  // allocate 1 KB
     if (ptr) 
