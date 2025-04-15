@@ -39,8 +39,8 @@ module soc(
         .BARREL_SHIFTER(0),
         .COMPRESSED_ISA(0),
         .ENABLE_COUNTERS(0),
-        .ENABLE_MUL(0),
-        .ENABLE_DIV(0),
+        .ENABLE_MUL(1),
+        .ENABLE_DIV(1),
         .ENABLE_IRQ(0),
         .ENABLE_IRQ_QREGS(0),
         .CATCH_MISALIGN(0),
@@ -68,7 +68,7 @@ module soc(
     // 2k x 32b ROM
     reg [31:0] rom[2047:0], rom_do;
     initial
-        $readmemh("../out/firmware.hex",rom);		
+        $readmemh("../out/placeholder_firmware.hex", rom);
     always @(posedge clk_24)
         rom_do <= rom[mem_addr[12:2]];
     

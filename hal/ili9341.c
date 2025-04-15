@@ -4,10 +4,10 @@
  * portions based on Adafruit ILI9341 driver for Arduino
  */
 
-#include "ili9341.h"
-#include "spi.h"
 #include "clkcnt.h"
 #include "font_8x8.h"
+#include "ili9341.h"
+#include "spi.h"
 
 #define ILI9341_DC_CMD() (gp_out &= ~(1 << 30))
 #define ILI9341_DC_DATA() (gp_out |= (1 << 30))
@@ -178,7 +178,7 @@ void ili9341_init(SPI_TypeDef *s)
 /*
  * opens a window into display mem for bitblt
  */
-void ili9341_setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+void ili9341_set_addr_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
     ili9341_write(ILI9341_CASET | ILI9341_CMD); // Column addr set
     ili9341_write(x0 >> 8);
@@ -284,7 +284,7 @@ void ili9341_hsv2rgb(uint8_t rgb[], uint8_t hsv[])
 /*
  * convert 8-bit (each) R,G,B to 16-bit rgb565 packed color
  */
-uint16_t ili9342_Color565(uint8_t r, uint8_t g, uint8_t b)
+uint16_t ili9342_color565(uint8_t r, uint8_t g, uint8_t b)
 {
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
@@ -292,7 +292,7 @@ uint16_t ili9342_Color565(uint8_t r, uint8_t g, uint8_t b)
 /*
  * fast color fill
  */
-void ili9342_fillcolor(uint16_t color, uint32_t sz)
+void ili9342_fill_color(uint16_t color, uint32_t sz)
 {
     uint8_t lo = color & 0xff, hi = color >> 8;
 
@@ -315,7 +315,7 @@ void ili9342_fillcolor(uint16_t color, uint32_t sz)
 /*
  * draw single pixel
  */
-void ili9341_drawPixel(int16_t x, int16_t y, uint16_t color)
+void ili9341_draw_pixel(int16_t x, int16_t y, uint16_t color)
 {
 
     if ((x < 0) || (x >= ILI9341_TFTWIDTH) || (y < 0) || (y >= ILI9341_TFTHEIGHT))
@@ -323,11 +323,11 @@ void ili9341_drawPixel(int16_t x, int16_t y, uint16_t color)
         return;
     }
 
-    ili9341_setAddrWindow(x, y, x + 1, y + 1);
+    ili9341_set_addr_window(x, y, x + 1, y + 1);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);
-    ili9342_fillcolor(color, 1);
+    ili9342_fill_color(color, 1);
     spi_cs_high(ili9341_spi);
 }
 
@@ -352,7 +352,7 @@ void ili9341_swap(int16_t *z0, int16_t *z1)
 /*
  * bresenham line draw routine swiped from Wikipedia
  */
-void ili9341_drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
+void ili9341_draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color)
 {
     int8_t steep;
     int16_t deltax, deltay, error, ystep, x, y;
@@ -393,11 +393,11 @@ void ili9341_drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
         /* plot point */
         if (steep)
         { /* flip point & plot */
-            ili9341_drawPixel(y, x, color);
+            ili9341_draw_pixel(y, x, color);
         }
         else
         { /* just plot */
-            ili9341_drawPixel(x, y, color);
+            ili9341_draw_pixel(x, y, color);
         }
 
         /* update error */
@@ -415,7 +415,7 @@ void ili9341_drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t c
 /*
  * fast vert line
  */
-void ili9341_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
+void ili9341_draw_vline_fast(int16_t x, int16_t y, int16_t h, uint16_t color)
 {
     // clipping
     if ((x >= ILI9341_TFTWIDTH) || (y >= ILI9341_TFTHEIGHT))
@@ -426,18 +426,18 @@ void ili9341_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
     {
         h = ILI9341_TFTHEIGHT - y;
     }
-    ili9341_setAddrWindow(x, y, x, y + h - 1);
+    ili9341_set_addr_window(x, y, x, y + h - 1);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);
-    ili9342_fillcolor(color, h);
+    ili9342_fill_color(color, h);
     spi_cs_high(ili9341_spi);
 }
 
 /*
  * fast horiz line
  */
-void ili9341_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+void ili9341_draw_hline_fast(int16_t x, int16_t y, int16_t w, uint16_t color)
 {
     // clipping
     if ((x >= ILI9341_TFTWIDTH) || (y >= ILI9341_TFTHEIGHT))
@@ -448,33 +448,33 @@ void ili9341_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
     {
         w = ILI9341_TFTWIDTH - x;
     }
-    ili9341_setAddrWindow(x, y, x + w - 1, y);
+    ili9341_set_addr_window(x, y, x + w - 1, y);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);
-    ili9342_fillcolor(color, w);
+    ili9342_fill_color(color, w);
     spi_cs_high(ili9341_spi);
 }
 
 /*
  * empty rect
  */
-void ili9341_emptyRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+void ili9341_empty_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
     /* top & bottom */
-    ili9341_drawFastHLine(x, y, w, color);
-    ili9341_drawFastHLine(x, y + h - 1, w, color);
+    ili9341_draw_hline_fast(x, y, w, color);
+    ili9341_draw_hline_fast(x, y + h - 1, w, color);
 
     /* left & right - don't redraw corners */
-    ili9341_drawFastVLine(x, y + 1, h - 2, color);
-    ili9341_drawFastVLine(x + w - 1, y + 1, h - 2, color);
+    ili9341_draw_vline_fast(x, y + 1, h - 2, color);
+    ili9341_draw_vline_fast(x + w - 1, y + 1, h - 2, color);
 }
 
 /*
  * fill a rectangle
  */
-void ili9341_fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
-                      uint16_t color)
+void ili9341_fill_rect(int16_t x, int16_t y, int16_t w, int16_t h,
+                       uint16_t color)
 {
     // clipping
     if ((x >= ILI9341_TFTWIDTH) || (y >= ILI9341_TFTHEIGHT))
@@ -490,32 +490,32 @@ void ili9341_fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
         h = ILI9341_TFTHEIGHT - y;
     }
 
-    ili9341_setAddrWindow(x, y, x + w - 1, y + h - 1);
+    ili9341_set_addr_window(x, y, x + w - 1, y + h - 1);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);
-    ili9342_fillcolor(color, h * w);
+    ili9342_fill_color(color, h * w);
     spi_cs_high(ili9341_spi);
 }
 
 /*
  * fill screen w/ single color
  */
-void ili9341_fillScreen(uint16_t color)
+void ili9341_fill_screen(uint16_t color)
 {
-    ili9341_fillRect(0, 0, 240, 320, color);
+    ili9341_fill_rect(0, 0, 240, 320, color);
 }
 
 /*
  * Draw character direct to the display
  */
-void ili9341_drawchar(int16_t x, int16_t y, uint8_t chr,
-                      uint16_t fg, uint16_t bg)
+void ili9341_draw_char(int16_t x, int16_t y, uint8_t chr,
+                       uint16_t fg, uint16_t bg)
 {
     uint16_t i, j, col;
     uint8_t d;
 
-    ili9341_setAddrWindow(x, y, x + 7, y + 7);
+    ili9341_set_addr_window(x, y, x + 7, y + 7);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);
@@ -533,7 +533,7 @@ void ili9341_drawchar(int16_t x, int16_t y, uint8_t chr,
                 col = bg;
             }
 
-            ili9342_fillcolor(col, 1);
+            ili9342_fill_color(col, 1);
 
             // next bit
             d <<= 1;
@@ -543,14 +543,14 @@ void ili9341_drawchar(int16_t x, int16_t y, uint8_t chr,
 }
 
 // draw a string to the display
-void ili9341_drawstr(int16_t x, int16_t y, char *str,
-                     uint16_t fg, uint16_t bg)
+void ili9341_draw_str(int16_t x, int16_t y, char *str,
+                      uint16_t fg, uint16_t bg)
 {
     uint8_t c;
 
     while ((c = *str++))
     {
-        ili9341_drawchar(x, y, c, fg, bg);
+        ili9341_draw_char(x, y, c, fg, bg);
         x += 8;
         if (x > ILI9341_TFTWIDTH)
         {
@@ -578,7 +578,7 @@ void ili9341_blit(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *src)
         h = ILI9341_TFTHEIGHT - y;
     }
 
-    ili9341_setAddrWindow(x, y, x + w - 1, y + h - 1);
+    ili9341_set_addr_window(x, y, x + w - 1, y + h - 1);
 
     ILI9341_DC_DATA();
     spi_cs_low(ili9341_spi);

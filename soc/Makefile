@@ -1,6 +1,4 @@
-# modified from examples in icestorm distribution
-
-OUT = ../out
+OUT := $(abspath ../out)/
 
 SOURCES := up5k.v \
            soc.v \
@@ -15,11 +13,8 @@ SOURCES := up5k.v \
 
 # firmware
 FIRMWARE ?= demo
-FW_PLCHLD_HEX := plchld_firmware.hex
-FW_HEX := firmware.hex
 
 # rtl
-PROJ := up5k_soc
 PIN_DEF := up5k.pcf
 SDC := up5k.sdc
 DEVICE := up5k
@@ -35,47 +30,47 @@ CDCPROG := cdc_prog
 VERILATOR := verilator
 TECH_LIB := cells_sim.v
 
-all: $(PROJ).bin
+all: $(OUT)$(FIRMWARE)_up5k_soc.bin
 
-$(FW_PLCHLD_HEX):
+$(OUT)placeholder_firmware.hex:
 	@mkdir -p $(OUT);
-	$(ICEBRAM) -g 32 2048 > $(OUT)/$(FW_PLCHLD_HEX)
+	$(ICEBRAM) -g 32 2048 > $(OUT)placeholder_firmware.hex
 
-%.json: $(SOURCES) $(FW_PLCHLD_HEX)
-	$(YOSYS) -p 'synth_ice40 -dsp -top up5k -json $(OUT)/$@' $(SOURCES)
+$(OUT)up5k_soc.json: $(SOURCES) $(OUT)placeholder_firmware.hex
+	$(YOSYS) -p 'synth_ice40 -dsp -top up5k -json $(OUT)up5k_soc.json' $(SOURCES) || exit 1
 
-%.asc: %.json $(PIN_DEF)
+$(OUT)up5k_soc.asc: $(OUT)up5k_soc.json $(PIN_DEF)
 	@mkdir -p $(OUT);
-	$(NEXTPNR) --pre-pack $(SDC) --placer heap --timing-allow-fail --$(DEVICE) --package $(PACKAGE) --json $(OUT)/$< --pcf $(PIN_DEF) --asc $(OUT)/$@
+	$(NEXTPNR) --pre-pack $(SDC) --placer heap --timing-allow-fail --$(DEVICE) --package $(PACKAGE) --json $(OUT)up5k_soc.json --pcf $(PIN_DEF) --asc $(OUT)up5k_soc.asc || exit 1
 
-$(FW_HEX):
-	$(MAKE) -C ../$(FIRMWARE)/ $@
+$(FIRMWARE).hex:
+	$(MAKE) -C ../$(FIRMWARE)/ $(OUT)$(FIRMWARE).hex || exit 1
 
-%.bin: %.asc $(FW_HEX)
+$(OUT)$(FIRMWARE)_up5k_soc.bin: $(OUT)up5k_soc.asc $(FIRMWARE).hex
 	@mkdir -p $(OUT);
-	$(ICEBRAM) $(OUT)/$(FW_PLCHLD_HEX) $(OUT)/$(FW_HEX) < $(OUT)/$< > $(OUT)/temp.asc
-	$(ICEPACK) $(OUT)/temp.asc $(OUT)/$@
+	$(ICEBRAM) $(OUT)placeholder_firmware.hex $(OUT)$(FIRMWARE).hex < $(OUT)up5k_soc.asc > $(OUT)temp.asc
+	$(ICEPACK) $(OUT)temp.asc $(OUT)$(FIRMWARE)_up5k_soc.bin
 
-%.rpt: %.asc
+$(OUT)up5k_soc.rpt: $(OUT)up5k_soc.asc
 	@mkdir -p $(OUT);
-	$(ICETIME) -d $(DEVICE) -mtr $(OUT)/$@ $<
+	$(ICETIME) -d $(DEVICE) -mtr $(OUT)up5k_soc.rpt $(OUT)up5k_soc.asc
 
-prog: $(PROJ).bin
+prog: $(OUT)$(FIRMWARE)_up5k_soc.bin
 	@mkdir -p $(OUT);
-	$(CDCPROG) -p /dev/ttyACM0 $(OUT)/$<
+	$(CDCPROG) -p /dev/ttyACM0 $(OUT)$(FIRMWARE)_up5k_soc.bin
 
 recode:
-	rm -f $(OUT)/$(FW_HEX) $(OUT)/$(PROJ).bin
+	rm -f $(OUT)$(FIRMWARE).hex $(OUT)$(FIRMWARE)_up5k_soc.bin
 	$(MAKE) prog
 
-flash: $(PROJ).bin
-	$(CDCPROG) -w -p /dev/ttyACM0 $(OUT)/$<
+flash: $(OUT)$(FIRMWARE)_up5k_soc.bin
+	$(CDCPROG) -w -p /dev/ttyACM0 $(OUT)$(FIRMWARE)_up5k_soc.bin
 
 lint: $(SOURCES)
 	$(VERILATOR) --lint-only -Wall --top-module up5k $(TECH_LIB) $(SOURCES)
 
 clean:
 	$(MAKE) -C ../$(FIRMWARE)/ clean
-	rm -f $(OUT)/*.json $(OUT)/*.asc $(OUT)/*.rpt $(OUT)/*.bin
+	rm -f $(OUT)*.json $(OUT)*.asc $(OUT)*.rpt $(OUT)*.bin
 
 .PHONY: all prog flash recode lint clean

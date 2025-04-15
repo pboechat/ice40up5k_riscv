@@ -6,7 +6,7 @@
 #ifndef __spi__
 #define __spi__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
 /* some common operation macros */
 #define spi_tx_wait(s) while (!(((s)->SPISR) & 0x10))

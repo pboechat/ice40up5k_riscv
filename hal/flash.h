@@ -6,7 +6,7 @@
 #ifndef __flash__
 #define __flash__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
 void flash_init(SPI_TypeDef *s);
 void flash_read(SPI_TypeDef *s, uint8_t *dst, uint32_t addr, uint32_t len);

@@ -6,7 +6,7 @@
 #ifndef __i2c__
 #define __i2c__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
 /* i2c functions */
 void i2c_init(I2C_TypeDef *s);

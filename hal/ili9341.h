@@ -7,9 +7,9 @@
 #ifndef __ili9341__
 #define __ili9341__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
-// Color definitions
+// color definitions
 #define ILI9341_BLACK 0x0000
 #define ILI9341_BLUE 0x001F
 #define ILI9341_RED 0xF800
@@ -23,16 +23,16 @@
 #define ILI9341_TFTHEIGHT 320
 
 void ili9341_init(SPI_TypeDef *s);
-void ili9341_drawPixel(int16_t x, int16_t y, uint16_t color);
-void ili9341_drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-void ili9341_drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+void ili9341_draw_pixel(int16_t x, int16_t y, uint16_t color);
+void ili9341_draw_vline_fast(int16_t x, int16_t y, int16_t h, uint16_t color);
+void ili9341_draw_hline_fast(int16_t x, int16_t y, int16_t w, uint16_t color);
 void ili9341_hsv2rgb(uint8_t rgb[], uint8_t hsv[]);
-uint16_t ili9342_Color565(uint8_t r, uint8_t g, uint8_t b);
-void ili9341_emptyRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void ili9341_fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void ili9341_fillScreen(uint16_t color);
-void ili9341_drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-void ili9341_drawchar(int16_t x, int16_t y, uint8_t chr, uint16_t fg, uint16_t bg);
-void ili9341_drawstr(int16_t x, int16_t y, char *str, uint16_t fg, uint16_t bg);
+uint16_t ili9342_color565(uint8_t r, uint8_t g, uint8_t b);
+void ili9341_empty_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void ili9341_fill_rect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void ili9341_fill_screen(uint16_t color);
+void ili9341_draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
+void ili9341_draw_char(int16_t x, int16_t y, uint8_t chr, uint16_t fg, uint16_t bg);
+void ili9341_draw_str(int16_t x, int16_t y, char *str, uint16_t fg, uint16_t bg);
 void ili9341_blit(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *src);
 #endif

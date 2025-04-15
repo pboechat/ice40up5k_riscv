@@ -1,0 +1,5 @@
+flatbuffers 
+tflite
+tensorflow
+Pillow
+serial

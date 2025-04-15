@@ -22,12 +22,14 @@ It features:
 
 ## Pre-requisites
 
-To build this project you will need:
+To build and use this project, ensure the following dependencies are installed:
 
 * [yosys](https://github.com/YosysHQ/yosys) - Synthesis
 * [nextpnr](https://github.com/YosysHQ/nextpnr) - Place and Route
 * [RISC-V GNU toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) - Firmware
 * [picolibc](https://github.com/picolibc/picolibc) - Firmware
+
+To install these dependencies, follow the installation instructions linked above or check your system's package manager.
 
 
 ## Building
@@ -42,36 +44,11 @@ Alternatively, you can pass `FIRMWARE=<relpath>` to build the SoC with a differe
 
 ## Firmwares
 
-### Demo
-
-This is a firmware to demonstrates the capabilities of the SoC.
-
-#### Booting up
-
-Connect a 115.2kbps terminal (eg, PuTTY) to the TX/RX pins of the board and apply power.
-
-You should see a message:
-
-	up5k_riscv - starting up
-	spi id: 0x00EF4016
-	LCD initialized
-	I2C0 Initialized
-	xxxx...
-	
-If you have an LCD connected to the SPI1 port pins on the FPGA then it should
-display several different screens to demonstrate the graphics. You can store
-a raw rgb565-encoded image in 240x320 dimensions at flash location 0x200000
-which will be BLITed to the screen. A helper script to properly format the
-image is located in the "tools" directory.
-
-A new addition is testing of the SB_I2C hard core. If you have an I2C device
-on the bus at the expected address then you will see "." characters, otherwise
-"x" will be printed.
+- [demo](demo/) - A simple firmware to demonstrate the capabilities of the RISC-V SoC.
+- [mlp](mlp/) - A minimalistic multi-layer perceptron implementation running on the SoC.
 
 
 ## Thanks
 
-Thanks to:
-
-* Eric Brombaugh <ebrombaugh1@cox.net> for the original project!
-* Claire Wolf <clifford@clifford.at> for picorv32, icestorm, etc.
+- Eric Brombaugh for the original [UP5K RISC-V project](https://github.com/emeb/up5k_riscv).
+- Claire Wolf for [picorv32](https://github.com/YosysHQ/picorv32), [icestorm](https://github.com/cliffordwolf/icestorm), and other contributions.

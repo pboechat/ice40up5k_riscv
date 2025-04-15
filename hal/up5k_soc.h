@@ -1,10 +1,10 @@
 /*
- * up5k_riscv.h - hardware definitions for up5k_riscv
+ * up5k_soc.h - hardware definitions for up5k_soc
  * 07-01-19 E. Brombaugh
  */
 
-#ifndef __up5k_riscv__
-#define __up5k_riscv__
+#ifndef __up5k_soc__
+#define __up5k_soc__
 
 #include <stdint.h>
 

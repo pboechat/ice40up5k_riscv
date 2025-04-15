@@ -6,7 +6,7 @@
 #ifndef __clkcnt__
 #define __clkcnt__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
 void clkcnt_wait(uint32_t clks);
 void clkcnt_delayms(uint32_t ms);

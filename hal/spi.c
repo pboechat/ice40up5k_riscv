@@ -3,8 +3,9 @@
  * 07-01-19 E. Brombaugh
  */
 
-#include <stdio.h>
 #include "spi.h"
+
+#include <stdio.h>
 
 /*
  * initialize spi port

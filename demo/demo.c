@@ -2,24 +2,36 @@
  * demo firmware
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include "up5k_riscv.h"
 #include "acia.h"
-#include "printf.h"
-#include "spi.h"
-#include "flash.h"
 #include "clkcnt.h"
+#include "flash.h"
 #include "ili9341.h"
 #include "i2c.h"
+#include "spi.h"
+#include "up5k_soc.h"
 
-void main()
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "printf.h"
+
+void main(void)
 {
 	uint32_t cnt, spi_id, i, j;
 
 	init_printf(0, acia_printf_putc);
-	printf("\n\n\rup5k_riscv - starting up\n\r");
+
+	printf("\n\n\r");
+	printf(" (               *         )   \n\r");
+	printf(" )\\ )          (  `     ( /(   \n\r");
+	printf("(()/(    (     )\\))(    )\\())  \n\r");
+	printf(" /(_))   )\\   ((_)()\\  ((_)\\   \n\r");
+	printf("(_))_   ((_)  (_()((_)   ((_)  \n\r");
+	printf(" |   \\  | __| |  \\/  |  / _ \\  \n\r");
+	printf(" | |) | | _|  | |\\/| | | (_) | \n\r");
+	printf(" |___/  |___| |_|  |_|  \\___/  \n\r");
+	printf("\n\r");
 
 #if 0
 	void *ptr = malloc(0x1000);  // allocate 1 KB
@@ -65,14 +77,14 @@ void main()
 
 #if 1
 	/* color fill + text fonts */
-	ili9341_fillRect(20, 20, 200, 280, ILI9341_MAGENTA);
-	ili9341_drawstr(120 - 44, (160 - 12 * 8), "Hello World", ILI9341_WHITE, ILI9341_MAGENTA);
+	ili9341_fill_rect(20, 20, 200, 280, ILI9341_MAGENTA);
+	ili9341_draw_str(120 - 44, (160 - 12 * 8), "Hello World", ILI9341_WHITE, ILI9341_MAGENTA);
 
 	/* test font */
 	for (i = 0; i < 256; i += 16)
 		for (j = 0; j < 16; j++)
-			ili9341_drawchar((120 - 8 * 8) + (j * 8), (160 - 8 * 8) + (i / 2), i + j,
-							 ILI9341_GREEN, ILI9341_BLACK);
+			ili9341_draw_char((120 - 8 * 8) + (j * 8), (160 - 8 * 8) + (i / 2), i + j,
+							  ILI9341_GREEN, ILI9341_BLACK);
 
 	clkcnt_delayms(1000);
 #endif
@@ -82,7 +94,7 @@ void main()
 	{
 		uint8_t rgb[3], hsv[3];
 		uint16_t color;
-		ili9341_fillScreen(ILI9341_BLACK);
+		ili9341_fill_screen(ILI9341_BLACK);
 		hsv[1] = 255;
 		hsv[2] = 255;
 		j=256;
@@ -93,14 +105,14 @@ void main()
 				hsv[0] = (i+j);
 				
 				ili9341_hsv2rgb(rgb, hsv);
-				color = ili9342_Color565(rgb[0],rgb[1],rgb[2]);
+				color = ili9342_color565(rgb[0],rgb[1],rgb[2]);
 #if 0
-				ili9341_drawLine(i, 0, ILI9341_TFTWIDTH-1, i, color);
-				ili9341_drawLine(ILI9341_TFTWIDTH-1, i, ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, color);
-				ili9341_drawLine(ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, 0, ILI9341_TFTWIDTH-1-i, color);
-				ili9341_drawLine(0, ILI9341_TFTWIDTH-1-i, i, 0, color);
+				ili9341_draw_line(i, 0, ILI9341_TFTWIDTH-1, i, color);
+				ili9341_draw_line(ILI9341_TFTWIDTH-1, i, ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, color);
+				ili9341_draw_line(ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, 0, ILI9341_TFTWIDTH-1-i, color);
+				ili9341_draw_line(0, ILI9341_TFTWIDTH-1-i, i, 0, color);
 #else
-				ili9341_drawFastHLine(0, i, 240, color);
+				ili9341_draw_hline_fast(0, i, 240, color);
 #endif
 			}
 		}

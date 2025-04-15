@@ -6,7 +6,7 @@
 #ifndef __acia__
 #define __acia__
 
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
 
 void acia_putc(char c);
 void acia_printf_putc(void *p, char c);

@@ -3,11 +3,13 @@
  * 06-23-20 E. Brombaugh
  */
 
-#include <stdio.h>
-#include "printf.h"
 #include "clkcnt.h"
 #include "i2c.h"
-#include "up5k_riscv.h"
+#include "up5k_soc.h"
+
+#include <stdio.h>
+
+#include "printf.h"
 
 /* contro reg bits */
 #define I2C_CCR_EN 0x80

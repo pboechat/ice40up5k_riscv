@@ -3,8 +3,9 @@
  * 07-01-19 E. Brombaugh
  */
 
-#include <stdio.h>
 #include "acia.h"
+
+#include <stdio.h>
 
 /*
  * serial transmit character
