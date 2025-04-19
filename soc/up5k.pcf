@@ -2,7 +2,7 @@
 # for rev 0.2 of up5k_usb board use clk_12 = 35
 set_io clk_12 35
 
-set_io RX 25                # 36a
+set_io RX 25                # 36b
 set_io TX 23                # 37a
 
 set_io spi0_mosi 14         # MOSI
