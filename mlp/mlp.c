@@ -15,6 +15,8 @@
 #include "printf.h"
 #endif
 
+//#define DEBUG
+
 // -----------------------------------------------------------------------------
 // model params
 
@@ -72,11 +74,8 @@
 #define PARAMS_SIZE (LAYER2_SCALE_OFFSET + LAYER2_SCALE_SIZE)
 
 #ifdef FIRMWARE
-#define PARAMS_FLASH_ADDR 0x100000
-#define INPUT_FLASH_ADDR 0x200000
-
-// points to start of HEAP
-uint8_t *const g_params = (uint8_t *)0x10000100;
+extern uint8_t __heap_start;
+uint8_t *const g_params = &__heap_start;
 #else
 uint8_t g_params[PARAMS_SIZE] = {};
 #endif
@@ -361,6 +360,58 @@ static inline int8_t saturate_to_int8(int32_t x)
 }
 
 // -----------------------------------------------------------------------------
+uint32_t crc32(uint8_t *data, uint32_t length)
+{
+    uint32_t crc = 0xffffffff;
+
+    for (uint32_t i = 0; i < length; i++)
+    {
+        crc ^= data[i];
+        for (uint8_t j = 0; j < 8; j++)
+        {
+            if (crc & 1)
+            {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            }
+            else
+            {
+                crc >>= 1;
+            }
+        }
+    }
+
+    return ~crc;
+}
+
+void print_buffer(const char *name, const int8_t *buf, uint32_t len)
+{
+    printf("%s:\n\r", name);
+    uint32_t c = 0, l = 0;
+    while (c < len)
+    {
+        printf("%04d ", buf[c++]);
+        if (++l == 10)
+        {
+            printf("\n\r");
+            l = 0;
+        }
+    }
+    if (l != 0)
+    {
+        printf("\n\r");
+    }
+}
+
+#define PRINT_CRC(buf, len) \
+    printf(#buf " (CRC32): %d\n\r", crc32((uint8_t *)buf, (len)))
+
+#define PRINT_BUFFER(buf, size) \
+    print_buffer(#buf, buf, size)
+
+#define PRINT_BUFFER_SUMMARY(buf, size)                                \
+    printf(#buf ": %d %d %d ... %d %d %d\n\r", buf[0], buf[1], buf[2], \
+           buf[(size) - 3], buf[(size) - 2], buf[(size) - 1])
+
 #if 0
 // -----------------------------------------------------------------------------
 // saturate a 64-bit integer to int32 range [INT32_MIN..INT32_MAX]
@@ -380,6 +431,7 @@ static inline int32_t saturate_to_int32(int64_t x)
     }
 }
 
+// -----------------------------------------------------------------------------
 // inspired on tensorflow's
 // MultiplyByQuantizedMultiplier()
 // source: https://github.com/tensorflow/tensorflow/blob/99e7ad988852f2a95f47b80f93032a5ab6a6e595/tensorflow/core/kernels/uniform_quant_ops/math_utils.h#L47
@@ -392,6 +444,7 @@ static inline int32_t multiply_by_quantized_multiplier(int32_t val, uint32_t mul
     return saturate_to_int32(result);
 }
 #else
+// -----------------------------------------------------------------------------
 // saturating rounding doubling high mul: (a * b + 2^30) >> 31
 static inline int32_t saturating_rounding_doubling_high_mul(int32_t a, int32_t b)
 {
@@ -403,9 +456,9 @@ static inline int32_t saturating_rounding_doubling_high_mul(int32_t a, int32_t b
 
     // 32-bit only version of: (int64_t)a * (int64_t)b
     int32_t a_high = a >> 16;
-    int32_t a_low = a & 0xFFFF;
+    int32_t a_low = a & 0xffff;
     int32_t b_high = b >> 16;
-    int32_t b_low = b & 0xFFFF;
+    int32_t b_low = b & 0xffff;
 
     int32_t high_high = a_high * b_high;
     int32_t high_low = a_high * b_low;
@@ -423,6 +476,7 @@ static inline int32_t saturating_rounding_doubling_high_mul(int32_t a, int32_t b
     return result;
 }
 
+// -----------------------------------------------------------------------------
 // rounding right shift by power-of-two
 static inline int32_t rounding_divide_by_pot(int32_t x, int32_t exponent)
 {
@@ -432,6 +486,7 @@ static inline int32_t rounding_divide_by_pot(int32_t x, int32_t exponent)
     return (x >> exponent) + (remainder > threshold ? 1 : 0);
 }
 
+// -----------------------------------------------------------------------------
 // multiply by quantized multiplier
 static inline int32_t multiply_by_quantized_multiplier(int32_t val, uint32_t multiplier, int32_t shift)
 {
@@ -635,6 +690,11 @@ static void forward_pass(const int8_t *inputs, int8_t *outputs)
         INPUT_SIZE,
         HIDDEN_SIZE);
 
+#ifdef DEBUG
+    PRINT_BUFFER(hiddens, HIDDEN_SIZE);
+    PRINT_CRC(hiddens, HIDDEN_SIZE);
+#endif
+
     // 2) dense (no activation) for final logits
     dense_int8(
         hiddens,
@@ -670,7 +730,6 @@ static void forward_pass(const int8_t *inputs, int8_t *outputs)
 #else
 #define getc(x) getc((x))
 #define sleep(x) usleep((x) * 1000)
-static uint8_t img_cnt = 0;
 static char *filenames[10] = {
     "zero.jpg.input.bin",
     "one.jpg.input.bin",
@@ -691,6 +750,7 @@ void main(void)
     int8_t inputs[INPUT_SIZE];
     int8_t outputs[OUTPUT_SIZE];
     int rcv_byte = 0;
+    uint8_t digit = 0;
 
 #ifdef FIRMWARE
     init_printf(0, acia_printf_putc);
@@ -711,10 +771,10 @@ void main(void)
     spi_init(SPI0);
     spi_init(SPI1);
 
+    flash_init(SPI0);
+
     ili9341_init(SPI1);
     ili9341_fill_screen(ILI9341_BLACK);
-
-    flash_init(SPI0);
 #endif
 
     printf("Waiting to read params\n\r");
@@ -748,6 +808,7 @@ void main(void)
                 }
                 flash_read(SPI0, (uint8_t *)&g_params[rcv_cnt], addr, batch_size);
                 rcv_cnt += batch_size;
+                addr += batch_size;
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
                 printf("[%08d/%08d]", rcv_cnt, PARAMS_SIZE);
             }
@@ -779,17 +840,62 @@ void main(void)
 
             fclose(params_fp);
 #endif
-            printf("\n\rParams read!\n\n\r");
+            printf("\n\rParams read!\n\r");
 
-            printf("Waiting to read input\n\r");
+#ifdef DEBUG
+            const int8_t *hidden_weights = (int8_t *)&g_params[HIDDEN_WEIGHT_OFFSET];
+            const int32_t *hidden_biases = (int32_t *)&g_params[HIDDEN_BIAS_OFFSET];
+            const int8_t *output_weights = (int8_t *)&g_params[OUTPUT_WEIGHT_OFFSET];
+            const int32_t *output_biases = (int32_t *)&g_params[OUTPUT_BIAS_OFFSET];
+            int8_t input_zp = (int8_t)g_params[INPUT_ZP_OFFSET];
+            const int8_t *hidden_weight_zps = (int8_t *)&g_params[HIDDEN_WEIGHT_ZP_OFFSET];
+            int8_t hidden_zp = (int8_t)g_params[HIDDEN_ZP_OFFSET];
+            const uint32_t *layer1_multipliers = (uint32_t *)&g_params[LAYER1_MULTIPLIER_OFFSET];
+            const int32_t *layer1_scales = (int32_t *)&g_params[LAYER1_SCALE_OFFSET];
+            const int8_t *output_weight_zps = (int8_t *)&g_params[OUTPUT_WEIGHT_ZP_OFFSET];
+            int8_t output_zp = (int8_t)g_params[OUTPUT_ZP_OFFSET];
+            const uint32_t *layer2_multipliers = (uint32_t *)&g_params[LAYER2_MULTIPLIER_OFFSET];
+            const int32_t *layer2_scales = (int32_t *)&g_params[LAYER2_SCALE_OFFSET];
+
+            PRINT_CRC(hidden_weights, INPUT_SIZE * HIDDEN_SIZE);
+
+            PRINT_CRC(hidden_biases, HIDDEN_SIZE);
+
+            PRINT_BUFFER(output_weights, HIDDEN_SIZE * OUTPUT_SIZE);
+            PRINT_CRC(output_weights, HIDDEN_SIZE * OUTPUT_SIZE);
+
+            PRINT_CRC(output_biases, OUTPUT_SIZE);
+
+            printf("input_zp: %d\n\r", input_zp);
+
+            PRINT_CRC(hidden_weight_zps, HIDDEN_SIZE);
+
+            printf("hidden_zp: %d\n\r", hidden_zp);
+
+            PRINT_CRC(layer1_multipliers, HIDDEN_SIZE);
+
+            PRINT_CRC(layer1_scales, HIDDEN_SIZE);
+
+            PRINT_CRC(output_weight_zps, OUTPUT_SIZE);
+
+            printf("output_zp: %d\n\r", output_zp);
+
+            PRINT_CRC(layer2_multipliers, OUTPUT_SIZE);
+
+            PRINT_CRC(layer2_scales, OUTPUT_SIZE);
+#endif
+
+            printf("Select digit [0-9]: ");
             state = WAITING_INPUT;
         }
         break;
         case WAITING_INPUT:
         {
             rcv_byte = getc(stdin);
-            if (rcv_byte != EOF)
+            if (rcv_byte >= '0' && rcv_byte <= '9')
             {
+                digit = (uint8_t)(rcv_byte - '0');
+                printf("%d\n\r", digit);
                 state = READING_INPUT;
             }
         }
@@ -798,7 +904,7 @@ void main(void)
         {
 #ifdef FIRMWARE
             uint32_t rcv_cnt = 0;
-            uint32_t addr = INPUT_FLASH_ADDR;
+            uint32_t addr = INPUT_FLASH_ADDR + (digit * INPUT_SIZE);
             uint8_t batch_size = 128;
             printf("[%08d/%08d]", rcv_cnt, INPUT_SIZE);
             while (rcv_cnt < INPUT_SIZE)
@@ -809,11 +915,12 @@ void main(void)
                 }
                 flash_read(SPI0, (uint8_t *)&inputs[rcv_cnt], addr, batch_size);
                 rcv_cnt += batch_size;
+                addr += batch_size;
                 printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
                 printf("[%08d/%08d]", rcv_cnt, INPUT_SIZE);
             }
 #else
-            FILE *input_fp = fopen(filenames[img_cnt], "rb");
+            FILE *input_fp = fopen(filenames[digit], "rb");
 
             uint32_t rcv_cnt = 0;
             uint8_t prt_cnt = 0;
@@ -839,24 +946,32 @@ void main(void)
             }
 
             fclose(input_fp);
-
-            img_cnt = (img_cnt + 1) % 10;
 #endif
-            printf("\n\rInput read!\n\n\r");
+            printf("\n\rInput read!\n\r");
+            PRINT_CRC(inputs, INPUT_SIZE);
 #ifdef FIRMWARE
+            ili9341_fill_screen(ILI9341_BLACK);
+
             uint32_t offset = 0;
-            for (uint32_t y = 0, p_y = (ILI9341_TFTHEIGHT - INPUT_HEIGHT) / 2; y < INPUT_HEIGHT; ++y, ++p_y)
+            for (uint32_t y = 0, p_y = (ILI9341_TFTHEIGHT - (INPUT_HEIGHT << 3)) / 2; y < INPUT_HEIGHT; ++y, p_y += 8)
             {
-                for (uint32_t x = 0, p_x = (ILI9341_TFTWIDTH - INPUT_WIDTH) / 2; x < INPUT_WIDTH; ++x, ++p_x)
+                for (uint32_t x = 0, p_x = (ILI9341_TFTWIDTH - (INPUT_WIDTH << 3)) / 2; x < INPUT_WIDTH; ++x, p_x += 8)
                 {
                     uint8_t input = (uint8_t)(inputs[offset++] + 128);
-                    uint8_t color = ili9342_color565(input, input, input);
-                    ili9341_draw_pixel(p_x, p_y, color);
+                    uint16_t color = ili9342_color565(input, input, input);
+                    for (uint32_t ky = 0; ky < 8; ++ky)
+                    {
+                        for (uint32_t kx = 0; kx < 8; ++kx)
+                        {
+                            ili9341_draw_pixel(p_x + kx, p_y + ky, color);
+                        }
+                    }
                 }
             }
 
             clkcnt_delayms(1000);
 #endif
+
             printf("Inferring\n\r");
             state = INFERRING;
         }
@@ -865,15 +980,14 @@ void main(void)
         {
             forward_pass(inputs, outputs);
 
-            printf("\n\r");
             printf("******************************\n\r");
             for (uint32_t i = 0; i < OUTPUT_SIZE; ++i)
             {
                 printf("Class %d => %d\n\r", i, outputs[i]);
             }
-            printf("******************************\n\n\r");
+            printf("******************************\n\r");
 
-            printf("Waiting for input\n\r");
+            printf("Select digit [0-9]: ");
             state = WAITING_INPUT;
             break;
         }

@@ -48,10 +48,11 @@ HAL_SOURCES := $(abspath $(FIRMWARE_MK_DIR)../hal/acia.c) \
 
 START_SCRIPT := $(abspath $(FIRMWARE_MK_DIR)../startup/start.S)
 
-all: $(OUT)$(FIRMWARE).bin
+all: $(OUT)$(FIRMWARE).hex
 
 $(OUT)$(FIRMWARE).elf: $(LDSCRIPT) $(START_SCRIPT) $(HAL_HEADERS) $(HAL_SOURCES) $(HEADERS) $(SOURCES)
-	@mkdir -p $(OUT);	
+	@mkdir -p $(OUT);
+	@echo "CFLAGS=$(CFLAGS)";
 	$(CC) $(CFLAGS) \
 		-Wl,-Bstatic,-T,$(LDSCRIPT),--strip-debug,-L$(PICOLIBC_LIB)/$(ARCH)/$(ABI),-L$(GCC_LIB),--whole-archive,-lc,--no-whole-archive,-lgcc,--gc-sections \
 		-o $(OUT)$(FIRMWARE).elf \

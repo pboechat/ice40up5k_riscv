@@ -44,7 +44,7 @@ $(OUT)up5k_soc.asc: $(OUT)up5k_soc.json $(PIN_DEF)
 	$(NEXTPNR) --pre-pack $(SDC) --placer heap --timing-allow-fail --$(DEVICE) --package $(PACKAGE) --json $(OUT)up5k_soc.json --pcf $(PIN_DEF) --asc $(OUT)up5k_soc.asc || exit 1
 
 $(FIRMWARE).hex:
-	$(MAKE) -C ../$(FIRMWARE)/ $(OUT)$(FIRMWARE).hex || exit 1
+	$(MAKE) -C ../$(FIRMWARE)/ all || exit 1
 
 $(OUT)$(FIRMWARE)_up5k_soc.bin: $(OUT)up5k_soc.asc $(FIRMWARE).hex
 	@mkdir -p $(OUT);
