@@ -123,63 +123,70 @@ static void ui2a(unsigned int num, int base, int uc, char *bf)
         return;
     }
 
-    if (base == 10)
+    if (num == 0)
     {
-        const int powers_of_10[10] = {
-            1000000000, 100000000, 10000000, 1000000, 100000,
-            10000, 1000, 100, 10, 1};
-        int i = 0;
-        while (i < 10)
-        {
-            int p = powers_of_10[i];
-            int q = 0;
-            while (num >= p)
-            {
-                num -= p;
-                q++;
-            }
-            if (q > 0 || ptr != bf)
-            {
-                *ptr++ = '0' + q;
-            }
-            i++;
-        }
+        *ptr++ = '0';
     }
     else
     {
-        // character map for base 16
-        const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
-
-        int mask;
-        int shift;
-        if (base == 16)
+        if (base == 10)
         {
-            mask = 0xf;
-            shift = 4;
+            const int powers_of_10[10] = {
+                1000000000, 100000000, 10000000, 1000000, 100000,
+                10000, 1000, 100, 10, 1};
+            int i = 0;
+            while (i < 10)
+            {
+                int p = powers_of_10[i];
+                int q = 0;
+                while (num >= p)
+                {
+                    num -= p;
+                    q++;
+                }
+                if (q > 0 || ptr != bf)
+                {
+                    *ptr++ = '0' + q;
+                }
+                i++;
+            }
         }
-        else if (base == 8)
+        else
         {
-            mask = 7;
-            shift = 3;
-        }
-        else // base 2
-        {
-            mask = 1;
-            shift = 1;
-        }
+            // character map for base 16
+            const char *digits = uc ? "0123456789ABCDEF" : "0123456789abcdef";
 
-        int i = 0;
-        do
-        {
-            int r = num & mask;    // faster than mod
-            num >>= shift;         // faster than div
-            temp[i++] = digits[r]; // store in reverse
-        } while (num > 0);
+            int mask;
+            int shift;
+            if (base == 16)
+            {
+                mask = 0xf;
+                shift = 4;
+            }
+            else if (base == 8)
+            {
+                mask = 7;
+                shift = 3;
+            }
+            else // base 2
+            {
+                mask = 1;
+                shift = 1;
+            }
 
-        // reverse the string
-        while (i--)
-        {
-            *ptr++ = temp[i];
+            int i = 0;
+            do
+            {
+                int r = num & mask;    // faster than mod
+                num >>= shift;         // faster than div
+                temp[i++] = digits[r]; // store in reverse
+            } while (num > 0);
+
+            // reverse the string
+            while (i--)
+            {
+                *ptr++ = temp[i];
+            }
         }
     }
 
