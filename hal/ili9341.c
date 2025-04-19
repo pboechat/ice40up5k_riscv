@@ -95,12 +95,12 @@ const static uint16_t initlst[] = {
     ILI9341_VMCTR2 | ILI9341_CMD, // VCOM Control 2
     0xAA,
     ILI9341_MADCTL | ILI9341_CMD, // Memory Access Control
-    0x08,
-    ILI9341_PIXFMT | ILI9341_CMD, //
-    0x55,
-    ILI9341_FRMCTR1 | ILI9341_CMD, //
+    0xA8,                         // Inverted row address mode, row/col exchange & RGB
+    ILI9341_PIXFMT | ILI9341_CMD, // Pixel Format
+    0x55,                         // 16-bit
+    ILI9341_FRMCTR1 | ILI9341_CMD,
     0x00, 0x13,
-    ILI9341_DFUNCTR | ILI9341_CMD, //
+    ILI9341_DFUNCTR | ILI9341_CMD,
     0x0A, 0xA2,
     0xF6 | ILI9341_CMD,
     0x01, 0x30,
@@ -503,11 +503,11 @@ void ili9341_fill_rect(int16_t x, int16_t y, int16_t w, int16_t h,
  */
 void ili9341_fill_screen(uint16_t color)
 {
-    ili9341_fill_rect(0, 0, 240, 320, color);
+    ili9341_fill_rect(0, 0, ILI9341_TFTWIDTH, ILI9341_TFTHEIGHT, color);
 }
 
 /*
- * Draw character direct to the display
+ * draw character direct to the display
  */
 void ili9341_draw_char(int16_t x, int16_t y, uint8_t chr,
                        uint16_t fg, uint16_t bg)

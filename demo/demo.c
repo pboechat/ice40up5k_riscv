@@ -18,7 +18,7 @@
 
 void main(void)
 {
-	uint32_t cnt, spi_id, i, j;
+	uint32_t cnt, spi_id;
 
 	init_printf(0, acia_printf_putc);
 
@@ -34,6 +34,8 @@ void main(void)
 	printf("\n\r");
 
 #if 0
+	/* test dynamic allocation */
+
 	void *ptr = malloc(0x1000);  // allocate 1 KB
     if (ptr) 
 	{
@@ -59,12 +61,12 @@ void main(void)
 	{
 		uint8_t read[256];
 		flash_read(SPI0, read, 0, 256);
-		for(i=0;i<256;i+=8)
+		for(uint32_t i = 0; i < 256; i += 8)
 		{
 			printf("0x%02X: ", i);
-			for(j=0;j<8;j++)
+			for(uint32_t j = 0; j < 8; ++j)
 			{
-				printf("0x%02X ", read[i+j]);
+				printf("0x%02X ", read[i + j]);
 			}
 			printf("\n\r");
 		}
@@ -77,14 +79,17 @@ void main(void)
 
 #if 1
 	/* color fill + text fonts */
-	ili9341_fill_rect(20, 20, 200, 280, ILI9341_MAGENTA);
-	ili9341_draw_str(120 - 44, (160 - 12 * 8), "Hello World", ILI9341_WHITE, ILI9341_MAGENTA);
+	ili9341_fill_rect(20, 20, ILI9341_TFTWIDTH - 40, ILI9341_TFTHEIGHT - 40, ILI9341_MAGENTA);
+	ili9341_draw_str((ILI9341_TFTWIDTH >> 1) - 44, 44, "Hello World", ILI9341_WHITE, ILI9341_MAGENTA);
 
 	/* test font */
-	for (i = 0; i < 256; i += 16)
-		for (j = 0; j < 16; j++)
-			ili9341_draw_char((120 - 8 * 8) + (j * 8), (160 - 8 * 8) + (i / 2), i + j,
-							  ILI9341_GREEN, ILI9341_BLACK);
+	for (uint32_t c = 0, p_y = ((ILI9341_TFTHEIGHT - 112) >> 1); c < 256; c += 16, p_y += 8)
+	{
+		for (uint32_t x = 0, p_x = ((ILI9341_TFTWIDTH - 128) >> 1); x < 16; ++x, p_x += 8)
+		{
+			ili9341_draw_char(p_x, p_y, (uint8_t)c + x, ILI9341_GREEN, ILI9341_BLACK);
+		}
+	}
 
 	clkcnt_delayms(1000);
 #endif
@@ -97,22 +102,22 @@ void main(void)
 		ili9341_fill_screen(ILI9341_BLACK);
 		hsv[1] = 255;
 		hsv[2] = 255;
-		j=256;
-		while(j--)
-		{	
-			for(i=0;i<320;i++)
+		uint32_t j = 256;
+		while (j--)
+		{
+			for (uint32_t i = 0; i < ILI9341_TFTHEIGHT; ++i)
 			{
-				hsv[0] = (i+j);
-				
+				hsv[0] = (i + j);
+
 				ili9341_hsv2rgb(rgb, hsv);
-				color = ili9342_color565(rgb[0],rgb[1],rgb[2]);
+				color = ili9342_color565(rgb[0], rgb[1], rgb[2]);
 #if 0
 				ili9341_draw_line(i, 0, ILI9341_TFTWIDTH-1, i, color);
-				ili9341_draw_line(ILI9341_TFTWIDTH-1, i, ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, color);
-				ili9341_draw_line(ILI9341_TFTWIDTH-1-i, ILI9341_TFTWIDTH-1, 0, ILI9341_TFTWIDTH-1-i, color);
-				ili9341_draw_line(0, ILI9341_TFTWIDTH-1-i, i, 0, color);
+				ili9341_draw_line(ILI9341_TFTWIDTH-1, i, ILI9341_TFTWIDTH-1 - i, ILI9341_TFTWIDTH-1, color);
+				ili9341_draw_line(ILI9341_TFTWIDTH-1 - i, ILI9341_TFTWIDTH-1, 0, ILI9341_TFTWIDTH-1 - i, color);
+				ili9341_draw_line(0, ILI9341_TFTWIDTH-1 - i, i, 0, color);
 #else
-				ili9341_draw_hline_fast(0, i, 240, color);
+				ili9341_draw_hline_fast(0, i, ILI9341_TFTWIDTH, color);
 #endif
 			}
 		}
@@ -127,7 +132,7 @@ void main(void)
 		uint32_t blitaddr, blitsz;
 		blitaddr = 0x200000;
 		blitsz = ILI9341_TFTWIDTH*4*sizeof(uint16_t);
-		for(i=0;i<ILI9341_TFTHEIGHT;i+=4)
+		for(uint32_t i = 0; i < ILI9341_TFTHEIGHT; i += 4)
 		{
 			flash_read(SPI0, (uint8_t *)blit, blitaddr, blitsz);
 			ili9341_blit(0, i, ILI9341_TFTWIDTH, 4, blit);

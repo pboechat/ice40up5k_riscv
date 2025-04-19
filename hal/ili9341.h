@@ -19,8 +19,8 @@
 #define ILI9341_YELLOW 0xFFE0
 #define ILI9341_WHITE 0xFFFF
 
-#define ILI9341_TFTWIDTH 240
-#define ILI9341_TFTHEIGHT 320
+#define ILI9341_TFTWIDTH 320
+#define ILI9341_TFTHEIGHT 240
 
 void ili9341_init(SPI_TypeDef *s);
 void ili9341_draw_pixel(int16_t x, int16_t y, uint16_t color);
