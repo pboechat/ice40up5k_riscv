@@ -4,6 +4,7 @@
 #include "flash.h"
 #include "ili9341.h"
 #include "spi.h"
+#include "up5k_soc.h"
 #else
 #include <unistd.h>
 #endif
@@ -15,7 +16,7 @@
 #include "printf.h"
 #endif
 
-//#define DEBUG
+// #define DEBUG
 
 // -----------------------------------------------------------------------------
 // model params
@@ -51,7 +52,8 @@
 #define HIDDEN_WEIGHT_ZP_OFFSET (HIDDEN_ZP_OFFSET + HIDDEN_ZP_SIZE)
 #define HIDDEN_WEIGHT_ZP_SIZE (HIDDEN_SIZE)
 
-#define LAYER1_MULTIPLIER_OFFSET (HIDDEN_WEIGHT_ZP_OFFSET + HIDDEN_WEIGHT_ZP_SIZE)
+// 2-bytes padding
+#define LAYER1_MULTIPLIER_OFFSET (HIDDEN_WEIGHT_ZP_OFFSET + HIDDEN_WEIGHT_ZP_SIZE + 2)
 #define LAYER1_MULTIPLIER_SIZE (HIDDEN_SIZE * 4)
 
 #define LAYER1_SCALE_OFFSET (LAYER1_MULTIPLIER_OFFSET + LAYER1_MULTIPLIER_SIZE)
@@ -78,6 +80,110 @@ extern uint8_t __heap_start;
 uint8_t *const g_params = &__heap_start;
 #else
 uint8_t g_params[PARAMS_SIZE] = {};
+#endif
+
+#ifdef DEBUG
+#ifdef FIRMWARE
+extern uint8_t __stack_top;
+extern uint8_t __stack_bottom;
+
+#define STACK_LIMIT (24 * 1024) // 24KB
+
+static inline void *get_sp(void)
+{
+    void *sp;
+    __asm__ volatile("mv %0, sp" : "=r"(sp));
+    return sp;
+}
+
+void stack_overflow_handler(void)
+{
+    printf("\n\n\n**********************\n\r");
+    printf("\n\r");
+    printf("    STACK OVERFLOW\n\r");
+    printf("\n\r");
+    printf("**********************\n\n\n\r");
+    uint32_t cnt = 0;
+    while (1)
+    {
+        gp_out = (gp_out & ~(7 << 17)) | ((cnt & 7) << 17);
+        cnt++;
+    }
+}
+
+#define CHECK_STACK_OVERFLOW()                         \
+    do                                                 \
+    {                                                  \
+        uint8_t *sp = (uint8_t *)get_sp();             \
+        if (sp < &__stack_bottom || sp > &__stack_top) \
+        {                                              \
+            stack_overflow_handler();                  \
+        }                                              \
+        if ((&__stack_top - sp) > STACK_LIMIT)         \
+        {                                              \
+            stack_overflow_handler();                  \
+        }                                              \
+    } while (0)
+#endif
+
+// -----------------------------------------------------------------------------
+uint32_t crc32(uint8_t *data, uint32_t length)
+{
+    uint32_t crc = 0xffffffff;
+
+    for (uint32_t i = 0; i < length; i++)
+    {
+        crc ^= data[i];
+        for (uint8_t j = 0; j < 8; j++)
+        {
+            if (crc & 1)
+            {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            }
+            else
+            {
+                crc >>= 1;
+            }
+        }
+    }
+
+    return ~crc;
+}
+
+// -----------------------------------------------------------------------------
+void print_buffer(const char *name, const int8_t *buf, uint32_t len)
+{
+    printf("%s:\n\r", name);
+    uint32_t c = 0, l = 0;
+    while (c < len)
+    {
+        printf("% 4d ", buf[c++]);
+        if (++l == 10)
+        {
+            printf("\n\r");
+            l = 0;
+        }
+    }
+    if (l != 0)
+    {
+        printf("\n\r");
+    }
+}
+
+#define PRINT_CRC(buf, len) \
+    printf(#buf " (CRC32): %d\n\r", crc32((uint8_t *)buf, (len)))
+
+#define PRINT_BUFFER(buf, size) \
+    print_buffer(#buf, buf, size)
+
+#define PRINT_BUFFER_SUMMARY(buf, size)                                \
+    printf(#buf ": %d %d %d ... %d %d %d\n\r", buf[0], buf[1], buf[2], \
+           buf[(size) - 3], buf[(size) - 2], buf[(size) - 1])
+
+#endif
+
+#ifndef CHECK_STACK_OVERFLOW
+#define CHECK_STACK_OVERFLOW()
 #endif
 
 // -----------------------------------------------------------------------------
@@ -359,59 +465,6 @@ static inline int8_t saturate_to_int8(int32_t x)
     }
 }
 
-// -----------------------------------------------------------------------------
-uint32_t crc32(uint8_t *data, uint32_t length)
-{
-    uint32_t crc = 0xffffffff;
-
-    for (uint32_t i = 0; i < length; i++)
-    {
-        crc ^= data[i];
-        for (uint8_t j = 0; j < 8; j++)
-        {
-            if (crc & 1)
-            {
-                crc = (crc >> 1) ^ 0xEDB88320;
-            }
-            else
-            {
-                crc >>= 1;
-            }
-        }
-    }
-
-    return ~crc;
-}
-
-void print_buffer(const char *name, const int8_t *buf, uint32_t len)
-{
-    printf("%s:\n\r", name);
-    uint32_t c = 0, l = 0;
-    while (c < len)
-    {
-        printf("%04d ", buf[c++]);
-        if (++l == 10)
-        {
-            printf("\n\r");
-            l = 0;
-        }
-    }
-    if (l != 0)
-    {
-        printf("\n\r");
-    }
-}
-
-#define PRINT_CRC(buf, len) \
-    printf(#buf " (CRC32): %d\n\r", crc32((uint8_t *)buf, (len)))
-
-#define PRINT_BUFFER(buf, size) \
-    print_buffer(#buf, buf, size)
-
-#define PRINT_BUFFER_SUMMARY(buf, size)                                \
-    printf(#buf ": %d %d %d ... %d %d %d\n\r", buf[0], buf[1], buf[2], \
-           buf[(size) - 3], buf[(size) - 2], buf[(size) - 1])
-
 #if 0
 // -----------------------------------------------------------------------------
 // saturate a 64-bit integer to int32 range [INT32_MIN..INT32_MAX]
@@ -524,6 +577,8 @@ static void dense_int8(
     uint32_t input_size,
     uint32_t output_size)
 {
+    CHECK_STACK_OVERFLOW();
+
     for (uint32_t oc = 0; oc < output_size; ++oc)
     {
         // accumulate in 32-bit
@@ -660,6 +715,8 @@ static void softmax_int8_inplace(int8_t *data, uint32_t length)
 //   3) softmax
 static void forward_pass(const int8_t *inputs, int8_t *outputs)
 {
+    CHECK_STACK_OVERFLOW();
+
     int8_t hiddens[HIDDEN_SIZE];
 
     const int8_t *hidden_weights = (int8_t *)&g_params[HIDDEN_WEIGHT_OFFSET];
@@ -774,7 +831,26 @@ void main(void)
     flash_init(SPI0);
 
     ili9341_init(SPI1);
-    ili9341_fill_screen(ILI9341_BLACK);
+
+    uint32_t addr = LOGO_FLASH_ADDR;
+    for (uint32_t y = 0, p_y = 0; y < LOGO_HEIGHT; ++y, p_y += 8)
+    {
+        for (uint32_t x = 0, p_x = 0; x < LOGO_WIDTH; ++x, p_x += 8)
+        {
+            uint16_t color;
+            flash_read(SPI0, (uint8_t *)&color, addr, 2);
+            addr += 2;
+            for (uint32_t ky = 0; ky < 8; ++ky)
+            {
+                for (uint32_t kx = 0; kx < 8; ++kx)
+                {
+                    ili9341_draw_pixel(p_x + kx, p_y + ky, color);
+                }
+            }
+        }
+    }
+
+    clkcnt_delayms(1000);
 #endif
 
     printf("Waiting to read params\n\r");
@@ -948,20 +1024,22 @@ void main(void)
             fclose(input_fp);
 #endif
             printf("\n\rInput read!\n\r");
+#ifdef DEBUG
             PRINT_CRC(inputs, INPUT_SIZE);
+#endif
 #ifdef FIRMWARE
             ili9341_fill_screen(ILI9341_BLACK);
 
             uint32_t offset = 0;
-            for (uint32_t y = 0, p_y = (ILI9341_TFTHEIGHT - (INPUT_HEIGHT << 3)) / 2; y < INPUT_HEIGHT; ++y, p_y += 8)
+            for (uint32_t y = 0, p_y = (ILI9341_TFTHEIGHT - (INPUT_HEIGHT << 1)) / 2; y < INPUT_HEIGHT; ++y, p_y += 2)
             {
-                for (uint32_t x = 0, p_x = (ILI9341_TFTWIDTH - (INPUT_WIDTH << 3)) / 2; x < INPUT_WIDTH; ++x, p_x += 8)
+                for (uint32_t x = 0, p_x = (ILI9341_TFTWIDTH - (INPUT_WIDTH << 1)) / 2; x < INPUT_WIDTH; ++x, p_x += 2)
                 {
                     uint8_t input = (uint8_t)(inputs[offset++] + 128);
                     uint16_t color = ili9342_color565(input, input, input);
-                    for (uint32_t ky = 0; ky < 8; ++ky)
+                    for (uint32_t ky = 0; ky < 2; ++ky)
                     {
-                        for (uint32_t kx = 0; kx < 8; ++kx)
+                        for (uint32_t kx = 0; kx < 2; ++kx)
                         {
                             ili9341_draw_pixel(p_x + kx, p_y + ky, color);
                         }
