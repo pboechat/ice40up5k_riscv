@@ -137,6 +137,8 @@ def main():
         layer_data += output_zp.to_bytes(1, byteorder='little', signed=True)
         for weight_zp in weight_zps:
             layer_data += weight_zp.to_bytes(1, byteorder='little', signed=True)
+        for _ in range(0, len(layer_data) % 4):
+            layer_data += b'\x00'
         for layer_mutiplier in layer_multipliers:
             layer_data += layer_mutiplier.to_bytes(4, byteorder='little', signed=False)
         for layer_shift in layer_shifts:
