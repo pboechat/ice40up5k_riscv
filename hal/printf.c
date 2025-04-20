@@ -293,6 +293,11 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va)
                 ch = *(fmt++);
                 lz = 1;
             }
+            else if (ch == ' ')
+            {
+                ch = *(fmt++);
+                lz = 0;
+            }
             if (ch >= '0' && ch <= '9')
             {
                 ch = a2i(ch, &fmt, 10, &w);
