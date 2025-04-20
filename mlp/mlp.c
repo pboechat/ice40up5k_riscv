@@ -1056,8 +1056,14 @@ void main(void)
         break;
         case INFERRING:
         {
+#ifdef FIRMWARE
+            clkcnt_reg = 0;
+#endif
             forward_pass(inputs, outputs);
-
+#ifdef FIRMWARE
+            uint32_t elapsed_clk = clkcnt_reg;
+            printf("Elapsed clocks: %d\n\r", elapsed_clk);
+#endif
             printf("******************************\n\r");
             for (uint32_t i = 0; i < OUTPUT_SIZE; ++i)
             {

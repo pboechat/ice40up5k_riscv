@@ -19,7 +19,6 @@ DIGITS := $(abspath $(MAKEFILE_DIR)../out/zero.jpg.input.bin) \
 		$(abspath $(MAKEFILE_DIR)../out/nine.jpg.input.bin)
 
 EXTRA_DEPS := $(LOGO) $(abspath $(MAKEFILE_DIR)../out/mlp.params.bin) $(DIGITS)
-			  
 
 include $(SCRIPTS_DIR)asserts.mk
 include $(SCRIPTS_DIR)firmware.mk
@@ -32,8 +31,8 @@ PARAMS_FLASH_ADDR := 204800
 INPUT_FLASH_ADDR := 409600
 
 CFLAGS += -DLOGO_FLASH_ADDR=$(LOGO_FLASH_ADDR) \
-          -DLOGO_WIDTH=$(LOGO_WIDTH) \
-          -DLOGO_HEIGHT=$(LOGO_HEIGHT) \
+		  -DLOGO_WIDTH=$(LOGO_WIDTH) \
+		  -DLOGO_HEIGHT=$(LOGO_HEIGHT) \
 		  -DPARAMS_FLASH_ADDR=$(PARAMS_FLASH_ADDR) \
 		  -DINPUT_FLASH_ADDR=$(INPUT_FLASH_ADDR)
 
