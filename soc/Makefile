@@ -1,3 +1,6 @@
+MAKEFILE_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+SCRIPTS_DIR := $(abspath $(MAKEFILE_DIR)../scripts)/
+
 OUT := $(abspath ../out)/
 
 SOURCES := up5k.v \
@@ -30,14 +33,24 @@ CDCPROG := cdc_prog
 VERILATOR := verilator
 TECH_LIB := cells_sim.v
 
+YSDEFS = -D $(if $(RV32I),RV32I,RV32IM)
+
+include $(SCRIPTS_DIR)stamp.mk
+
+$(eval $(call declare_stamp,$(OUT),ysdefs,$(YSDEFS)))
+
 all: $(OUT)$(FIRMWARE)_up5k_soc.bin
 
 $(OUT)placeholder_firmware.hex:
 	@mkdir -p $(OUT);
 	$(ICEBRAM) -g 32 2048 > $(OUT)placeholder_firmware.hex
 
-$(OUT)up5k_soc.json: $(SOURCES) $(OUT)placeholder_firmware.hex
-	$(YOSYS) -p 'synth_ice40 -dsp -top up5k -json $(OUT)up5k_soc.json' $(SOURCES) || exit 1
+$(OUT)up5k_soc.json: $(SOURCES) $(OUT)placeholder_firmware.hex $(OUT).stamp_ysdefs
+	@mkdir -p $(OUT);
+	set -e
+	$(YOSYS) -Wall -p "setattr -mod -set error_on_warning 1; verilog_defines $(YSDEFS); read_verilog $(SOURCES); synth_ice40 -dsp -top up5k -retime -json $(OUT)up5k_soc.json" 2>&1 | tee $(OUT)yosys.log
+	@if grep -i "Warning:" $(OUT)yosys.log | grep -v "ABC: Warning:" | grep -v "Found log message matching"; then exit 1; fi
+	! grep -i "ERROR:" $(OUT)yosys.log
 
 $(OUT)up5k_soc.asc: $(OUT)up5k_soc.json $(PIN_DEF)
 	@mkdir -p $(OUT);
@@ -71,6 +84,8 @@ lint: $(SOURCES)
 
 clean:
 	$(MAKE) -C ../$(FIRMWARE)/ clean
-	rm -f $(OUT)*.json $(OUT)*.asc $(OUT)*.rpt $(OUT)*.bin
+	rm -f $(OUT)*.json $(OUT)*.asc $(OUT)*.rpt $(OUT)*.bin $(OUT).stamp_ysdefs
 
-.PHONY: all prog flash recode lint clean
+FORCE:
+
+.PHONY: all prog flash recode lint clean FORCE

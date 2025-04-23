@@ -1,4 +1,5 @@
 FIRMWARE_MK_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+SCRIPTS_DIR := $(abspath $(FIRMWARE_MK_DIR)../scripts)/
 
 OUT := $(abspath $(FIRMWARE_MK_DIR)../out)/
 
@@ -8,7 +9,7 @@ OBJDUMP := riscv64-unknown-elf-objdump
 ICEPROG := iceprog
 HEXDUMP := hexdump
 HEXDUMP_ARGS := -v -e '1/4 "%08x" "\n"'
-ARCH := rv32im
+ARCH = $(if $(RV32I),rv32i,rv32im)
 ABI := ilp32
 PICOLIBC_INCLUDE := /usr/lib/picolibc/riscv64-unknown-elf/include
 PICOLIBC_LIB := /usr/lib/picolibc/riscv64-unknown-elf/lib
@@ -48,11 +49,14 @@ HAL_SOURCES := $(abspath $(FIRMWARE_MK_DIR)../hal/acia.c) \
 
 START_SCRIPT := $(abspath $(FIRMWARE_MK_DIR)../startup/start.S)
 
+include $(SCRIPTS_DIR)stamp.mk
+
+$(eval $(call declare_stamp,$(OUT),cflags,$(CFLAGS)))
+
 all: $(OUT)$(FIRMWARE).hex
 
-$(OUT)$(FIRMWARE).elf: $(LDSCRIPT) $(START_SCRIPT) $(HAL_HEADERS) $(HAL_SOURCES) $(HEADERS) $(SOURCES)
+$(OUT)$(FIRMWARE).elf: $(LDSCRIPT) $(START_SCRIPT) $(HAL_HEADERS) $(HAL_SOURCES) $(HEADERS) $(SOURCES) $(EXTRA_DEPS) $(OUT).stamp_cflags
 	@mkdir -p $(OUT);
-	@echo "CFLAGS=$(CFLAGS)";
 	$(CC) $(CFLAGS) \
 		-Wl,-Bstatic,-T,$(LDSCRIPT),--strip-debug,-L$(PICOLIBC_LIB)/$(ARCH)/$(ABI),-L$(GCC_LIB),--whole-archive,-lc,--no-whole-archive,-lgcc,--gc-sections \
 		-o $(OUT)$(FIRMWARE).elf \
@@ -68,9 +72,13 @@ $(OUT)$(FIRMWARE).bin: $(OUT)$(FIRMWARE).elf
 	@mkdir -p $(OUT);
 	$(OBJCOPY) -O binary $(OUT)$(FIRMWARE).elf $(OUT)$(FIRMWARE).bin
 
-$(OUT)$(FIRMWARE).hex: $(OUT)$(FIRMWARE).bin $(EXTRA_DEPS)
+$(OUT)$(FIRMWARE).hex: $(OUT)$(FIRMWARE).bin
 	@mkdir -p $(OUT);
 	$(HEXDUMP) $(HEXDUMP_ARGS) $(OUT)$(FIRMWARE).bin > $(OUT)$(FIRMWARE).hex
 
 clean:
-	rm -f $(OUT)*.bin $(OUT)*.hex $(OUT)*.elf $(OUT)*.dis
+	rm -f $(OUT)*.bin $(OUT)*.hex $(OUT)*.elf $(OUT)*.dis $(OUT).stamp_cflags
+
+FORCE:
+
+.PHONY: all disassemble clean FORCE

@@ -18,62 +18,7 @@
 
 // #define DEBUG
 
-// -----------------------------------------------------------------------------
-// model params
-
-#define BATCH_SIZE 1
-#define INPUT_WIDTH 28
-#define INPUT_HEIGHT 28
-#define INPUT_SIZE (INPUT_WIDTH * INPUT_HEIGHT)
-#define HIDDEN_SIZE 128
-#define OUTPUT_SIZE 10
-
-// hidden layer weights: shape = (INPUT_SIZE * HIDDEN_SIZE)
-#define HIDDEN_WEIGHT_OFFSET 0
-#define HIDDEN_WEIGHT_SIZE (INPUT_SIZE * HIDDEN_SIZE)
-
-// hidden layer bias: shape = (HIDDEN_SIZE)
-#define HIDDEN_BIAS_OFFSET (HIDDEN_WEIGHT_OFFSET + HIDDEN_WEIGHT_SIZE)
-#define HIDDEN_BIAS_SIZE (HIDDEN_SIZE * 4)
-
-// output weights: shape = (HIDDEN_SIZE * OUTPUT_SIZE)
-#define OUTPUT_WEIGHT_OFFSET (HIDDEN_BIAS_OFFSET + HIDDEN_BIAS_SIZE)
-#define OUTPUT_WEIGHT_SIZE (HIDDEN_SIZE * OUTPUT_SIZE)
-
-#define OUTPUT_BIAS_OFFSET (OUTPUT_WEIGHT_OFFSET + OUTPUT_WEIGHT_SIZE)
-#define OUTPUT_BIAS_SIZE (OUTPUT_SIZE * 4)
-
-#define INPUT_ZP_OFFSET (OUTPUT_BIAS_OFFSET + OUTPUT_BIAS_SIZE)
-#define INPUT_ZP_SIZE 1
-
-#define HIDDEN_ZP_OFFSET (INPUT_ZP_OFFSET + INPUT_ZP_SIZE)
-#define HIDDEN_ZP_SIZE 1
-
-#define HIDDEN_WEIGHT_ZP_OFFSET (HIDDEN_ZP_OFFSET + HIDDEN_ZP_SIZE)
-#define HIDDEN_WEIGHT_ZP_SIZE (HIDDEN_SIZE)
-
-// 2-bytes padding
-#define LAYER1_MULTIPLIER_OFFSET (HIDDEN_WEIGHT_ZP_OFFSET + HIDDEN_WEIGHT_ZP_SIZE + 2)
-#define LAYER1_MULTIPLIER_SIZE (HIDDEN_SIZE * 4)
-
-#define LAYER1_SCALE_OFFSET (LAYER1_MULTIPLIER_OFFSET + LAYER1_MULTIPLIER_SIZE)
-#define LAYER1_SCALE_SIZE (HIDDEN_SIZE * 4)
-
-// skip 1-byte
-#define OUTPUT_ZP_OFFSET (LAYER1_SCALE_OFFSET + LAYER1_SCALE_SIZE + 1)
-#define OUTPUT_ZP_SIZE 1
-
-#define OUTPUT_WEIGHT_ZP_OFFSET (OUTPUT_ZP_OFFSET + OUTPUT_ZP_SIZE)
-#define OUTPUT_WEIGHT_ZP_SIZE (OUTPUT_SIZE)
-
-#define LAYER2_MULTIPLIER_OFFSET (OUTPUT_WEIGHT_ZP_OFFSET + OUTPUT_WEIGHT_ZP_SIZE)
-#define LAYER2_MULTIPLIER_SIZE (OUTPUT_SIZE * 4)
-
-#define LAYER2_SCALE_OFFSET (LAYER2_MULTIPLIER_OFFSET + LAYER2_MULTIPLIER_SIZE)
-#define LAYER2_SCALE_SIZE (OUTPUT_SIZE * 4)
-
-// total size
-#define PARAMS_SIZE (LAYER2_SCALE_OFFSET + LAYER2_SCALE_SIZE)
+#include "mlp_params.h"
 
 #ifdef FIRMWARE
 extern uint8_t __heap_start;
@@ -577,8 +522,6 @@ static void dense_int8(
     uint32_t input_size,
     uint32_t output_size)
 {
-    CHECK_STACK_OVERFLOW();
-
     for (uint32_t oc = 0; oc < output_size; ++oc)
     {
         // accumulate in 32-bit
@@ -715,8 +658,6 @@ static void softmax_int8_inplace(int8_t *data, uint32_t length)
 //   3) softmax
 static void forward_pass(const int8_t *inputs, int8_t *outputs)
 {
-    CHECK_STACK_OVERFLOW();
-
     int8_t hiddens[HIDDEN_SIZE];
 
     const int8_t *hidden_weights = (int8_t *)&g_params[HIDDEN_WEIGHT_OFFSET];
@@ -787,7 +728,7 @@ static void forward_pass(const int8_t *inputs, int8_t *outputs)
 #else
 #define getc(x) getc((x))
 #define sleep(x) usleep((x) * 1000)
-static char *filenames[10] = {
+static char *s_filenames[10] = {
     "zero.jpg.input.bin",
     "one.jpg.input.bin",
     "two.jpg.input.bin",
@@ -857,6 +798,8 @@ void main(void)
 
     while (1)
     {
+        CHECK_STACK_OVERFLOW();
+
         switch (state)
         {
         case WAITING_PARAMS:
@@ -996,7 +939,7 @@ void main(void)
                 printf("[%08d/%08d]", rcv_cnt, INPUT_SIZE);
             }
 #else
-            FILE *input_fp = fopen(filenames[digit], "rb");
+            FILE *input_fp = fopen(s_filenames[digit], "rb");
 
             uint32_t rcv_cnt = 0;
             uint8_t prt_cnt = 0;
@@ -1061,8 +1004,8 @@ void main(void)
 #endif
             forward_pass(inputs, outputs);
 #ifdef FIRMWARE
-            uint32_t elapsed_clk = clkcnt_reg;
-            printf("Elapsed clocks: %d\n\r", elapsed_clk);
+            uint32_t elapsed_cycles = clkcnt_reg;
+            printf("Elapsed cycles: %d\n\r", elapsed_cycles);
 #endif
             printf("******************************\n\r");
             for (uint32_t i = 0; i < OUTPUT_SIZE; ++i)

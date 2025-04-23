@@ -36,14 +36,19 @@ module soc(
     picorv32 #(
         .PROGADDR_RESET(32'h0000_0000),    // start or ROM
         .STACKADDR(32'h1002_0000),         // end of RAM
-        .BARREL_SHIFTER(0),
+        .BARREL_SHIFTER(1),
         .COMPRESSED_ISA(0),
         .ENABLE_COUNTERS(0),
+`ifdef RV32I
+        .ENABLE_MUL(0),
+        .ENABLE_DIV(0),
+`else
         .ENABLE_MUL(1),
         .ENABLE_DIV(1),
+`endif
         .ENABLE_IRQ(0),
         .ENABLE_IRQ_QREGS(0),
-        .CATCH_MISALIGN(0),
+        .CATCH_MISALIGN(1),
         .CATCH_ILLINSN(0)
     ) cpu_inst (
         .clk(clk_24),

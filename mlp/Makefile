@@ -8,15 +8,15 @@ SOURCES := $(MAKEFILE_DIR)mlp.c
 LOGO := $(abspath $(MAKEFILE_DIR)../out/logo.png.bin)
 
 DIGITS := $(abspath $(MAKEFILE_DIR)../out/zero.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/one.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/two.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/three.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/four.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/five.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/six.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/seven.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/eight.jpg.input.bin) \
-		$(abspath $(MAKEFILE_DIR)../out/nine.jpg.input.bin)
+		  $(abspath $(MAKEFILE_DIR)../out/one.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/two.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/three.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/four.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/five.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/six.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/seven.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/eight.jpg.input.bin) \
+		  $(abspath $(MAKEFILE_DIR)../out/nine.jpg.input.bin)
 
 EXTRA_DEPS := $(LOGO) $(abspath $(MAKEFILE_DIR)../out/mlp.params.bin) $(DIGITS)
 
@@ -34,7 +34,8 @@ CFLAGS += -DLOGO_FLASH_ADDR=$(LOGO_FLASH_ADDR) \
 		  -DLOGO_WIDTH=$(LOGO_WIDTH) \
 		  -DLOGO_HEIGHT=$(LOGO_HEIGHT) \
 		  -DPARAMS_FLASH_ADDR=$(PARAMS_FLASH_ADDR) \
-		  -DINPUT_FLASH_ADDR=$(INPUT_FLASH_ADDR)
+		  -DINPUT_FLASH_ADDR=$(INPUT_FLASH_ADDR) \
+		  -I$(OUT)
 
 CHUNK_SIZE := 204800
 BITSTREAM_SIZE = $(shell stat -c %s $(OUT)mlp_up5k_soc.bin)
@@ -67,7 +68,7 @@ $(OUT)mlp.tflite:
 
 $(OUT)mlp.params.bin: $(OUT)mlp.tflite
 	@mkdir -p $(OUT);
-	$(SCRIPTS_DIR)python.sh $(SCRIPTS_DIR)mlp/extract_mlp_params.py -v -i $(OUT)mlp.tflite -o $(OUT)mlp.params.bin || exit 1
+	$(SCRIPTS_DIR)python.sh $(SCRIPTS_DIR)mlp/extract_mlp_params.py -v -t $(OUT)mlp.tflite -b $(OUT)mlp.params.bin -c $(OUT)mlp_params.h || exit 1
 
 $(OUT)logo.png.bin:
 	@mkdir -p $(OUT);
@@ -77,8 +78,8 @@ $(OUT)logo.png.bin:
 	@mkdir -p $(OUT);
 	$(SCRIPTS_DIR)python.sh $(SCRIPTS_DIR)mlp/make_mlp_input.py -i $(MAKEFILE_DIR)../data/mlp/$(notdir $*) -o $@ || exit 1
 
-$(OUT)mlp: $(HEADERS) $(SOURCES) $(OUT)mlp.params.bin $(EXTRA_DEPS)
+$(OUT)mlp: $(HEADERS) $(SOURCES) $(EXTRA_DEPS)
 	@mkdir -p $(OUT);
-	gcc -g -o $(OUT)mlp $(SOURCES) || exit 1
+	gcc -I$(OUT) -g -o $(OUT)mlp $(SOURCES) || exit 1
 
 .PHONY: repack
