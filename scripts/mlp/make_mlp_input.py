@@ -10,7 +10,6 @@ def main():
     parser.add_argument('-o', '--output', type=str, required=True)
     args = parser.parse_args()
 
-
     img = Image.open(args.input).convert('L')  # 'L' => 8-bit grayscale
     img = img.resize((28, 28), Image.Resampling.BILINEAR)
     arr_uint8 = np.array(img, dtype=np.uint8)

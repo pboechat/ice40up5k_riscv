@@ -585,3 +585,55 @@ void ili9341_blit(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *src)
     spi_transmit(ili9341_spi, (uint8_t *)src, h * w * sizeof(uint16_t));
     spi_cs_high(ili9341_spi);
 }
+
+void ili9341_blit_binary(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t scale, uint8_t *data)
+{
+    // clipping
+    if ((x >= ILI9341_TFTWIDTH) || (y >= ILI9341_TFTHEIGHT))
+    {
+        return;
+    }
+    if ((x + w - 1) >= ILI9341_TFTWIDTH)
+    {
+        w = ILI9341_TFTWIDTH - x;
+    }
+    if ((y + h - 1) >= ILI9341_TFTHEIGHT)
+    {
+        h = ILI9341_TFTHEIGHT - y;
+    }
+
+    ili9341_set_addr_window(x, y, x + w * scale - 1, y + h * scale - 1);
+
+    ILI9341_DC_DATA();
+    spi_cs_low(ili9341_spi);
+
+    int16_t line_width = w >> 3;
+    for (int16_t y = 0; y < h; ++y)
+    {
+        for (uint8_t j = 0; j < scale; ++j)
+        {
+            for (int16_t x = 0; x < line_width; ++x)
+            {
+                uint8_t bit_pack = data[x];
+
+                uint8_t color;
+                for (uint8_t mask = 128; mask > 0; mask >>= 1)
+                {
+                    for (uint8_t k = 0; k < scale; ++k)
+                    {
+                        color = -((bit_pack & mask) != 0);
+                        spi_tx_wait(ili9341_spi);
+                        ili9341_spi->SPITXDR = color;
+                        spi_tx_wait(ili9341_spi);
+                        ili9341_spi->SPITXDR = color;
+                    }
+                }
+            }
+        }
+
+        data += line_width;
+    }
+
+    spi_rx_wait(ili9341_spi);
+    spi_cs_high(ili9341_spi);
+}

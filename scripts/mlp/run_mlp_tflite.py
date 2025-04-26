@@ -10,7 +10,10 @@ def main():
     parser.add_argument('-i', '--input', type=str, required=True)
     args = parser.parse_args()
 
-    interpreter = tf.lite.Interpreter(model_path=args.model, experimental_preserve_all_tensors=True)
+    interpreter = tf.lite.Interpreter(
+        model_path=args.model,
+        experimental_preserve_all_tensors=True
+    )
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
@@ -26,7 +29,7 @@ def main():
     interpreter.invoke()
 
     output_data = interpreter.get_tensor(output_index)
-    
+
     print(interpreter.get_tensor(5).tolist()[0])
     print(interpreter.get_tensor(6).tolist()[0])
 

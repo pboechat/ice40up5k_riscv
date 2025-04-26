@@ -26,7 +26,7 @@ include $(SCRIPTS_DIR)firmware.mk
 LOGO_FLASH_ADDR := 131072
 LOGO_WIDTH := 40
 LOGO_HEIGHT := 30
-LOGO_FLASH_SIZE := $(shell bash -c 'echo $$(( $(LOGO_WIDTH) * $(LOGO_HEIGHT) * 2 ))')
+LOGO_FLASH_SIZE := $(shell bash -c 'echo $$(( $(LOGO_WIDTH) * $(LOGO_HEIGHT) / 8 ))')
 PARAMS_FLASH_ADDR := 204800
 INPUT_FLASH_ADDR := 409600
 
@@ -48,7 +48,7 @@ PAD2_SIZE = $(shell bash -c 'echo $$(( $(CHUNK_SIZE) - $(PARAMS_SIZE) ))')
 
 repack: $(OUT)mlp_up5k_soc.bin $(EXTRA_DEPS)
 	$(call assert-lt,BITSTREAM_SIZE,LOGO_FLASH_ADDR,"bitstream too big")
-	$(call assert-eq,LOGO_SIZE,LOGO_FLASH_SIZE,"logo must be 2,4KB")
+	$(call assert-eq,LOGO_SIZE,LOGO_FLASH_SIZE,"logo must be 150B")
 	$(call assert-lt,FIRST_CHUNK_SIZE,CHUNK_SIZE,"bitstream+logo too big")
 	$(call assert-lt,PARAMS_SIZE,CHUNK_SIZE,"params too big")
 	@truncate -s $(PAD0_SIZE) $(OUT)pad0.bin
@@ -72,7 +72,7 @@ $(OUT)mlp.params.bin: $(OUT)mlp.tflite
 
 $(OUT)logo.png.bin:
 	@mkdir -p $(OUT);
-	$(SCRIPTS_DIR)python.sh $(SCRIPTS_DIR)rgb565.py -i $(MAKEFILE_DIR)../data/mlp/logo.png -o $@ || exit 1
+	$(SCRIPTS_DIR)python.sh $(SCRIPTS_DIR)dump_image.py -i $(MAKEFILE_DIR)../data/mlp/logo.png -o $@ -f bin || exit 1
 
 %.input.bin:
 	@mkdir -p $(OUT);

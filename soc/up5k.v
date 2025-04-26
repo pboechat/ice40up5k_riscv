@@ -7,6 +7,7 @@
 module up5k(
     // 12MHz clock osc
     input clk_12,
+    input resetn_sw,
     // serial
     inout RX, 
     inout TX,
@@ -62,26 +63,30 @@ module up5k(
     );
     
     // reset generator waits > 10us afer PLL lock
-    reg [7:0] reset_cnt;
-    reg reset;    
+    reg [7:0] pll_reset_cnt;
+    reg pll_reset;    
     always @(posedge clk)
     begin
         if(!pll_lock)
         begin
-            reset_cnt <= 8'h00;
-            reset <= 1'b1;
+            pll_reset_cnt <= 8'h00;
+            pll_reset <= 1'b1;
         end
         else
         begin
-            if(reset_cnt != 8'hff)
+            if(pll_reset_cnt != 8'hff)
             begin
-                reset_cnt <= reset_cnt + 8'h01;
-                reset <= 1'b1;
+                pll_reset_cnt <= pll_reset_cnt + 8'h01;
+                pll_reset <= 1'b1;
             end
             else
-                reset <= 1'b0;
+                pll_reset <= 1'b0;
         end
     end
+
+    wire reset;
+
+    assign reset = ~resetn_sw | pll_reset;
     
     // soc
     wire [3:0] tst;

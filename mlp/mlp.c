@@ -773,25 +773,11 @@ void main(void)
 
     ili9341_init(SPI1);
 
-    uint32_t addr = LOGO_FLASH_ADDR;
-    for (uint32_t y = 0, p_y = 0; y < LOGO_HEIGHT; ++y, p_y += 8)
     {
-        for (uint32_t x = 0, p_x = 0; x < LOGO_WIDTH; ++x, p_x += 8)
-        {
-            uint16_t color;
-            flash_read(SPI0, (uint8_t *)&color, addr, 2);
-            addr += 2;
-            for (uint32_t ky = 0; ky < 8; ++ky)
-            {
-                for (uint32_t kx = 0; kx < 8; ++kx)
-                {
-                    ili9341_draw_pixel(p_x + kx, p_y + ky, color);
-                }
-            }
-        }
+        uint8_t logo_data[LOGO_WIDTH * LOGO_HEIGHT / 8];
+        flash_read(SPI0, logo_data, LOGO_FLASH_ADDR, sizeof(logo_data));
+        ili9341_blit_binary(0, 0, LOGO_WIDTH, LOGO_HEIGHT, 8, logo_data);
     }
-
-    clkcnt_delayms(1000);
 #endif
 
     printf("Waiting to read params\n\r");

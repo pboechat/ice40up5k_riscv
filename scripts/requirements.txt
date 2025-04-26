@@ -3,3 +3,4 @@ tflite
 tensorflow
 Pillow
 serial
+numpy

@@ -64,14 +64,14 @@ def main():
         buffer_index = tensor.Buffer()
         buffer_data = model.Buffers(buffer_index).DataAsNumpy()
 
-        assert(buffer_data is not None)
+        assert (buffer_data is not None)
 
         if isinstance(buffer_data, int):
-            assert(buffer_data == 0)
+            assert (buffer_data == 0)
             buffer_data = bytearray()
         else:
             buffer_data = buffer_data.tobytes()
-            
+
         # assume linear quantization
         quant = tensor.Quantization()
         if quant is not None:
@@ -81,7 +81,7 @@ def main():
             scales = [0]
             zero_points = [0]
 
-        assert(len(buffer_data) == _EXPECTED_BUFFER_SIZE[tensor_name])
+        assert (len(buffer_data) == _EXPECTED_BUFFER_SIZE[tensor_name])
 
         tensors[tensor_name] = {
             'index': i,
@@ -89,7 +89,6 @@ def main():
             'zero_points': zero_points,
             'data': buffer_data,
         }
-
 
     if args.verbose:
         for tensor_name, tensor in tensors.items():
@@ -102,10 +101,10 @@ def main():
 
     def approx_eq(a, b, eps=1e-9):
         return abs(a-b) <= eps
-    
-    
+
     # inspired on tensorflow's QuantizeMultiplier()
     # source: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/kernels/internal/quantization_util.cc#L53
+
     def quantize_multiplier(float_multiplier, max_bits=31):
         if float_multiplier <= 0.0 or float_multiplier >= 1.0:
             raise ValueError("This function only handles scale in (0, 1)")
@@ -123,20 +122,20 @@ def main():
             q_fixed = (1 << max_bits) - 1
 
         return q_fixed, -shift
-    
+
     def quantize_layer_multipliers(input_scale, weight_scales, output_scale, bias_scales):
         layer_multipliers = []
         layer_shifts = []
         for weight_scale, bias_scale in zip(weight_scales, bias_scales):
-            layer_scale = input_scale * weight_scale 
-            assert(approx_eq(layer_scale, bias_scale))
+            layer_scale = input_scale * weight_scale
+            assert (approx_eq(layer_scale, bias_scale))
             layer_scale /= output_scale
-            layer_multipler, layer_shift = quantize_multiplier(layer_scale, _QUANTIZED_MULTIPLIER_BITWIDTH)
+            layer_multipler, layer_shift = quantize_multiplier(
+                layer_scale, _QUANTIZED_MULTIPLIER_BITWIDTH)
             layer_multipliers.append(layer_multipler)
             layer_shifts.append(layer_shift)
 
         return layer_multipliers, layer_shifts
-
 
     def add_padding(data, alignment):
         pad_count = len(data) % alignment
@@ -144,31 +143,37 @@ def main():
             data += b'\x00'
         return pad_count
 
-
     def serialize_layer_data(input_zp, weight_zps, output_zp, layer_multipliers, layer_shifts):
         layer_data = bytearray()
         layer_data += input_zp.to_bytes(1, byteorder='little', signed=True)
         layer_data += output_zp.to_bytes(1, byteorder='little', signed=True)
         for weight_zp in weight_zps:
-            layer_data += weight_zp.to_bytes(1, byteorder='little', signed=True)
+            layer_data += weight_zp.to_bytes(1,
+                                             byteorder='little', signed=True)
         add_padding(layer_data, 4)
         for layer_mutiplier in layer_multipliers:
-            layer_data += layer_mutiplier.to_bytes(4, byteorder='little', signed=False)
+            layer_data += layer_mutiplier.to_bytes(
+                4, byteorder='little', signed=False)
         for layer_shift in layer_shifts:
-            layer_data += layer_shift.to_bytes(4, byteorder='little', signed=True) # can be negative
+            # can be negative
+            layer_data += layer_shift.to_bytes(4,
+                                               byteorder='little', signed=True)
         return layer_data
 
-    assert(len(tensors[_HIDDEN_WEIGHT_TENSOR_NAME]['data']) == _INPUT_SIZE * _HIDDEN_SIZE)
-    assert(len(tensors[_INPUT_QUANT_NAME]['scales']) == 1)
-    assert(len(tensors[_INPUT_QUANT_NAME]['zero_points']) == 1)
-    assert(len(tensors[_HIDDEN_QUANT_NAME]['scales']) == 1)
-    assert(len(tensors[_HIDDEN_QUANT_NAME]['zero_points']) == 1)
-    assert(len(tensors[_OUTPUT_QUANT_NAME]['scales']) == 1)
-    assert(len(tensors[_OUTPUT_QUANT_NAME]['zero_points']) == 1)
+    assert (len(tensors[_HIDDEN_WEIGHT_TENSOR_NAME]
+            ['data']) == _INPUT_SIZE * _HIDDEN_SIZE)
+    assert (len(tensors[_INPUT_QUANT_NAME]['scales']) == 1)
+    assert (len(tensors[_INPUT_QUANT_NAME]['zero_points']) == 1)
+    assert (len(tensors[_HIDDEN_QUANT_NAME]['scales']) == 1)
+    assert (len(tensors[_HIDDEN_QUANT_NAME]['zero_points']) == 1)
+    assert (len(tensors[_OUTPUT_QUANT_NAME]['scales']) == 1)
+    assert (len(tensors[_OUTPUT_QUANT_NAME]['zero_points']) == 1)
     # assert(len(tensors[_SOFTMAX_QUANT_NAME]['scales']) == 1)
     # assert(len(tensors[_SOFTMAX_QUANT_NAME]['zero_points']) == 1)
-    assert(all(zp == 0 for zp in tensors[_HIDDEN_BIAS_TENSOR_NAME]['zero_points']))
-    assert(all(zp == 0 for zp in tensors[_OUTPUT_BIAS_TENSOR_NAME]['zero_points']))
+    assert (
+        all(zp == 0 for zp in tensors[_HIDDEN_BIAS_TENSOR_NAME]['zero_points']))
+    assert (
+        all(zp == 0 for zp in tensors[_OUTPUT_BIAS_TENSOR_NAME]['zero_points']))
 
     layer1_multipliers, layer1_shifts = quantize_layer_multipliers(
         tensors[_INPUT_QUANT_NAME]['scales'][0],
@@ -227,7 +232,7 @@ def main():
 
     open(args.binary, 'wb').write(params_data)
     open(args.c_header, 'wt').write(
-f"""#ifndef __mlp_params__
+        f"""#ifndef __mlp_params__
 #define __mlp_params__
 
 // -----------------------------------------------------------------------------
@@ -305,7 +310,7 @@ f"""#ifndef __mlp_params__
 
 #endif"""
     )
-    
+
     sys.exit(0)
 
 
