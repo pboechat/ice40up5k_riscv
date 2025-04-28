@@ -965,8 +965,7 @@ void main(void)
             {
                 for (uint32_t x = 0; x < INPUT_WIDTH; ++x, ++offset)
                 {
-                    uint8_t input = (uint8_t)(inputs[offset] - input_zp);
-                    input_colors[offset] = ili9342_color565(input, input, input);
+                    input_colors[offset] = -((inputs[offset] - input_zp) > 64);
                 }
             }
 
