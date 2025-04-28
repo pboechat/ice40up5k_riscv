@@ -34,6 +34,6 @@ void ili9341_fill_screen(uint16_t color);
 void ili9341_draw_line(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
 void ili9341_draw_char(int16_t x, int16_t y, uint8_t chr, uint16_t fg, uint16_t bg);
 void ili9341_draw_str(int16_t x, int16_t y, char *str, uint16_t fg, uint16_t bg);
-void ili9341_blit(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *src);
-void ili9341_blit_binary(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t scale, uint8_t *data);
+void ili9341_blit(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t scale, uint16_t *src);
+void ili9341_blit_binary(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t scale, uint8_t *src);
 #endif

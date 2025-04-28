@@ -959,24 +959,23 @@ void main(void)
 #ifdef FIRMWARE
             ili9341_fill_screen(ILI9341_BLACK);
 
-            uint32_t offset = 0;
-            for (uint32_t y = 0, p_y = (ILI9341_TFTHEIGHT - (INPUT_HEIGHT << 1)) / 2; y < INPUT_HEIGHT; ++y, p_y += 2)
+            int8_t input_zp = (int8_t)g_params[INPUT_ZP_OFFSET];
+            uint16_t input_colors[INPUT_WIDTH * INPUT_HEIGHT];
+            for (uint32_t y = 0, offset = 0; y < INPUT_HEIGHT; ++y)
             {
-                for (uint32_t x = 0, p_x = (ILI9341_TFTWIDTH - (INPUT_WIDTH << 1)) / 2; x < INPUT_WIDTH; ++x, p_x += 2)
+                for (uint32_t x = 0; x < INPUT_WIDTH; ++x, ++offset)
                 {
-                    uint8_t input = (uint8_t)(inputs[offset++] + 128);
-                    uint16_t color = ili9342_color565(input, input, input);
-                    for (uint32_t ky = 0; ky < 2; ++ky)
-                    {
-                        for (uint32_t kx = 0; kx < 2; ++kx)
-                        {
-                            ili9341_draw_pixel(p_x + kx, p_y + ky, color);
-                        }
-                    }
+                    uint8_t input = (uint8_t)(inputs[offset] - input_zp);
+                    input_colors[offset] = ili9342_color565(input, input, input);
                 }
             }
 
-            clkcnt_delayms(1000);
+            ili9341_blit((ILI9341_TFTWIDTH - (INPUT_WIDTH << 3)) >> 1,
+                         (ILI9341_TFTHEIGHT - (INPUT_HEIGHT << 3)) >> 1,
+                         INPUT_WIDTH,
+                         INPUT_HEIGHT,
+                         8,
+                         input_colors);
 #endif
 
             printf("Inferring\n\r");
